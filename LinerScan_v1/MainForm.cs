@@ -154,7 +154,13 @@ namespace LinerScan
                     devices.Select(d => d.Name + Environment.NewLine + d.DevicePath));
                 File.WriteAllText(Path.Combine(Application.StartupPath, "camera-devices.txt"), deviceList);
                 var store = new CameraConfigurationStore(Path.Combine(Application.StartupPath, "cam.ini"));
-                cameraManager.Start(store.Load());
+                var previous = store.Load();
+                var configuration = store.Load(devices);
+                if (string.IsNullOrWhiteSpace(previous.Camera1DevicePath))
+                    LogText("CAM1 경로 자동 설정: " + configuration.Camera1DevicePath);
+                if (string.IsNullOrWhiteSpace(previous.Camera2DevicePath))
+                    LogText("CAM2 경로 자동 설정: " + configuration.Camera2DevicePath);
+                cameraManager.Start(configuration);
             }
             catch (Exception ex)
             {
