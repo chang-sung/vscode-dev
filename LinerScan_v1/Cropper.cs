@@ -11,10 +11,18 @@ namespace LinerScan.Imaging
     {
         private readonly List<Mat> _marks = new List<Mat>();
         private readonly List<string> _markNames = new List<string>();
+        private readonly object _marksSync = new object();
+        private string _templatesDir;
+        private string _markPattern = "mark*.png";
+        private string _marksSignature;
 
         public IReadOnlyList<string> MarkNames
         {
-            get { return _markNames; }
+            get
+            {
+                lock (_marksSync)
+                    return _markNames.ToArray();
+            }
         }
 
         public double DefaultMinScore { get; set; } = 0.70;
@@ -25,31 +33,17 @@ namespace LinerScan.Imaging
             string templatesDir,
             string pattern = "mark*.png")
         {
-            ClearMarksInternal();
+            if (string.IsNullOrWhiteSpace(templatesDir))
+                throw new ArgumentException("템플릿 폴더 경로가 비어 있습니다.", nameof(templatesDir));
 
-            if (!Directory.Exists(templatesDir))
+            Directory.CreateDirectory(templatesDir);
+
+            lock (_marksSync)
             {
-                Directory.CreateDirectory(templatesDir);
-                return;
-            }
-
-            List<string> files = Directory
-                .GetFiles(templatesDir, pattern)
-                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            foreach (string file in files)
-            {
-                Mat mark = Cv2.ImRead(file, ImreadModes.Color);
-
-                if (mark.Empty())
-                {
-                    mark.Dispose();
-                    continue;
-                }
-
-                _marks.Add(mark);
-                _markNames.Add(Path.GetFileName(file));
+                _templatesDir = templatesDir;
+                _markPattern = pattern;
+                _marksSignature = null;
+                RefreshMarksIfChangedInternal();
             }
         }
 
@@ -58,6 +52,69 @@ namespace LinerScan.Imaging
             string pattern = "mark*.png")
         {
             LoadMarks(templatesDir, pattern);
+        }
+
+        // 매칭 전에 폴더의 추가/수정/삭제를 확인합니다.
+        // 복사 중이거나 손상된 PNG가 있으면 기존 마크를 유지하고 다음 매칭 때 재시도합니다.
+        public bool RefreshMarksIfChanged()
+        {
+            lock (_marksSync)
+                return RefreshMarksIfChangedInternal();
+        }
+
+        private bool RefreshMarksIfChangedInternal()
+        {
+            if (_templatesDir == null)
+                return false;
+
+            var loaded = new List<Mat>();
+            try
+            {
+                string[] files = Directory.Exists(_templatesDir)
+                    ? Directory.GetFiles(_templatesDir, _markPattern)
+                        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToArray()
+                    : new string[0];
+
+                string signature = string.Join("|", files.Select(f =>
+                {
+                    var info = new FileInfo(f);
+                    return f + ":" + info.Length + ":" + info.LastWriteTimeUtc.Ticks;
+                }));
+
+                if (signature == _marksSignature)
+                    return false;
+
+                var names = new List<string>();
+                foreach (string file in files)
+                {
+                    Mat mark = Cv2.ImRead(file, ImreadModes.Color);
+                    if (mark == null || mark.Empty())
+                    {
+                        mark?.Dispose();
+                        return false;
+                    }
+
+                    loaded.Add(mark);
+                    names.Add(Path.GetFileName(file));
+                }
+
+                ClearMarksInternal();
+                _marks.AddRange(loaded);
+                loaded.Clear();
+                _markNames.AddRange(names);
+                _marksSignature = signature;
+                return true;
+            }
+            catch (Exception)
+            {
+                // 파일 복사가 끝나지 않았거나 잠시 접근할 수 없으면 다음 매칭에서 재시도합니다.
+                return false;
+            }
+            finally
+            {
+                foreach (Mat mark in loaded)
+                    mark.Dispose();
+            }
         }
 
         public static Rect ClampRect(Rect rect, int width, int height)
@@ -305,54 +362,58 @@ namespace LinerScan.Imaging
             if (frame == null || frame.Empty())
                 return false;
 
-            if (_marks.Count == 0)
-                return false;
-
-            double threshold = minScore ?? DefaultMinScore;
-            double bestScore = double.MinValue;
-            bool found = false;
-
-            for (int i = 0; i < _marks.Count; i++)
+            lock (_marksSync)
             {
-                Mat templ = _marks[i];
+                RefreshMarksIfChangedInternal();
+                if (_marks.Count == 0)
+                    return false;
 
-                OpenCvSharp.Point offset = MakeOffsetAuto(
-                    templ,
-                    cropSize,
-                    extraDown,
-                    extraX);
-
-                Rect candidateRect;
-                System.Drawing.Point candidateCenter;
-                double candidateScore;
-
-                bool ok = TryFindCropRectByTemplate(
-                    frame,
-                    searchRect,
-                    templ,
-                    cropSize,
-                    offset,
-                    out candidateRect,
-                    out candidateCenter,
-                    out candidateScore,
-                    threshold,
-                    useCanny);
-
-                if (!ok)
-                    continue;
-
-                if (found && candidateScore <= bestScore)
-                    continue;
-
-                found = true;
-                bestScore = candidateScore;
-                cropRect = candidateRect;
-                markCenter = candidateCenter;
-                usedMarkName = _markNames[i];
-                usedScore = candidateScore;
+                double threshold = minScore ?? DefaultMinScore;
+                double bestScore = double.MinValue;
+                bool found = false;
+    
+                for (int i = 0; i < _marks.Count; i++)
+                {
+                    Mat templ = _marks[i];
+    
+                    OpenCvSharp.Point offset = MakeOffsetAuto(
+                        templ,
+                        cropSize,
+                        extraDown,
+                        extraX);
+    
+                    Rect candidateRect;
+                    System.Drawing.Point candidateCenter;
+                    double candidateScore;
+    
+                    bool ok = TryFindCropRectByTemplate(
+                        frame,
+                        searchRect,
+                        templ,
+                        cropSize,
+                        offset,
+                        out candidateRect,
+                        out candidateCenter,
+                        out candidateScore,
+                        threshold,
+                        useCanny);
+    
+                    if (!ok)
+                        continue;
+    
+                    if (found && candidateScore <= bestScore)
+                        continue;
+    
+                    found = true;
+                    bestScore = candidateScore;
+                    cropRect = candidateRect;
+                    markCenter = candidateCenter;
+                    usedMarkName = _markNames[i];
+                    usedScore = candidateScore;
+                }
+    
+                return found;
             }
-
-            return found;
         }
 
         private static bool TryFindCropRectByTemplate(
@@ -503,7 +564,11 @@ namespace LinerScan.Imaging
 
         public void Dispose()
         {
-            ClearMarksInternal();
+            lock (_marksSync)
+            {
+                _templatesDir = null;
+                ClearMarksInternal();
+            }
         }
     }
 }
