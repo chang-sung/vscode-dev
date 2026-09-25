@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -54,6 +56,80 @@ namespace LinerScan.Cameras
                 Camera1DevicePath = Read("CAM1_DEVICE_PATH"),
                 Camera2DevicePath = Read("CAM2_DEVICE_PATH")
             };
+        }
+
+        /// <summary>
+        /// 빈 경로만 현재 검색된 HD USB Camera 두 대의 DevicePath로 채워 cam.ini에 저장합니다.
+        /// 다른 카메라가 섞이거나 장치 수가 불확실하면 자동 배정하지 않습니다.
+        /// </summary>
+        public CameraConfiguration Load(IReadOnlyList<CameraDeviceInfo> devices)
+        {
+            CameraConfiguration config = Load();
+            bool missing1 = string.IsNullOrWhiteSpace(config.Camera1DevicePath);
+            bool missing2 = string.IsNullOrWhiteSpace(config.Camera2DevicePath);
+
+            if (!missing1 && !missing2)
+                return config;
+
+            if (devices == null)
+                throw new ArgumentNullException(nameof(devices));
+
+            var cameras = devices
+                .Where(d => string.Equals(d.Name, "HD USB Camera", StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrWhiteSpace(d.DevicePath))
+                .OrderBy(d => d.DevicePath, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (cameras.Length != 2 ||
+                string.Equals(cameras[0].DevicePath, cameras[1].DevicePath,
+                    StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(
+                    "CAM 경로 자동 설정 실패: HD USB Camera가 서로 다른 경로로 정확히 두 대 검색되어야 합니다. camera-devices.txt를 확인하세요.");
+
+            string path1 = config.Camera1DevicePath;
+            string path2 = config.Camera2DevicePath;
+
+            if (missing1 && missing2)
+            {
+                path1 = cameras[0].DevicePath;
+                path2 = cameras[1].DevicePath;
+            }
+            else
+            {
+                string existing = missing1 ? path2 : path1;
+                if (!cameras.Any(d => string.Equals(d.DevicePath, existing,
+                    StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException(
+                        "기존 CAM 경로가 검색된 HD USB Camera 두 대 중 하나와 일치하지 않습니다. cam.ini와 camera-devices.txt를 확인하세요.");
+
+                string remaining = cameras
+                    .First(d => !string.Equals(d.DevicePath, existing,
+                        StringComparison.OrdinalIgnoreCase)).DevicePath;
+                if (missing1)
+                    path1 = remaining;
+                else
+                    path2 = remaining;
+            }
+
+            if (missing1)
+                Write("CAM1_DEVICE_PATH", path1);
+            if (missing2)
+                Write("CAM2_DEVICE_PATH", path2);
+
+            config.Camera1DevicePath = path1;
+            config.Camera2DevicePath = path2;
+            return config;
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool WritePrivateProfileString(
+            string section, string key, string value, string filePath);
+
+        private void Write(string key, string value)
+        {
+            if (!WritePrivateProfileString("Camera", key, value, path))
+                throw new IOException("cam.ini 카메라 경로 저장 실패: " + key);
         }
 
         /// <summary>
