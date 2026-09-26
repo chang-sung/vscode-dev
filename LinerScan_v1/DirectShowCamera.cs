@@ -184,8 +184,7 @@ namespace LinerScan.Cameras
                 {
                     if (bottomUp) Cv2.Flip(raw, oriented, FlipMode.X);
                     else raw.CopyTo(oriented);
-                    var mean = Cv2.Mean(oriented);
-                    if ((mean.Val0 + mean.Val1 + mean.Val2) / 3 < 5) return 0;
+ 
                     Cv2.Resize(oriented, normalized, new OpenCvSharp.Size(1600, 1200));
                     frames.Store(normalized);
                     callbackError = null;
