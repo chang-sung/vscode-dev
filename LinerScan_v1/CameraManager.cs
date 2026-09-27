@@ -93,6 +93,14 @@ namespace LinerScan.Cameras
         /// 등록된 카메라를 순서대로 해제하고 관리 목록을 비웁니다.
         /// Start 및 프레임 조회와 생명주기 변경이 겹치지 않도록 소유 UI 스레드에서 호출합니다.
         /// </summary>
+        public Mat GetFrameAfter(int number, long sequence, out long currentSequence)
+        {
+            currentSequence = sequence;
+            DirectShowCamera camera;
+            return cameras.TryGetValue(number, out camera)
+                ? camera.GetFrameAfter(sequence, out currentSequence) : null;
+        }
+
         public void Stop()
         {
             try { foreach (var camera in cameras.Values) camera.Dispose(); }
