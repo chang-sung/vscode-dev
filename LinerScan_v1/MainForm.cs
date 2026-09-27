@@ -32,9 +32,15 @@ namespace LinerScan
         private readonly DateTime?[] cameraMissingSince = new DateTime?[3];
         private readonly DateTime[] lastReconnectAttempt = new DateTime[3];
         private readonly bool[] awaitingRecovery = new bool[3];
-        private readonly bool[] inferenceBlockedLogged = new bool[3];
+        private readonly bool[] requestActive = new bool[3];
+        private readonly bool[] requestExpired = new bool[3];
+        private readonly bool[] requestCompleted = new bool[3];
+        private readonly DateTime[] requestStarted = new DateTime[3];
+        // PLC starts its 10 s timer before this polling tick; reserve 1 s for polling and I/O.
+        private static readonly TimeSpan PcResponseWindow = TimeSpan.FromSeconds(9);
         private static readonly TimeSpan CameraLostDelay = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan CameraRetryInterval = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan InspectionReconnectInterval = TimeSpan.FromSeconds(3);
         public MainForm()
         {
             InitializeComponent();
@@ -109,28 +115,18 @@ namespace LinerScan
         {
             try
             {
-                short INSP_1, INSP_2;
-                PLC.GetDevice2("R25010.0", out INSP_1);
-                PLC.GetDevice2("R25010.5", out INSP_2);
+                short insp1, insp2;
+                PLC.GetDevice2("R25010.0", out insp1);
+                PLC.GetDevice2("R25010.5", out insp2);
 
-                if (INSP_1 == 1)
-                {
-                    if (!CanStartInference(1)) return;
-                    LoadRoiFromConfig();
-                    if (RunInference1FromPLC() == null) return;
+                UpdateInspectionRequest(1, insp1 == 1);
+                UpdateInspectionRequest(2, insp2 == 1);
 
-                    PLC.SetDevice("R25010.0", 0);
-                    PLC.SetDevice("R25010.3", 1); // 1열 복귀
-                }
-                else if (INSP_2 == 1)
-                {
-                    if (!CanStartInference(2)) return;
-                    LoadRoiFromConfig();
-                    if (RunInference2FromPLC() == null) return;
-
-                    PLC.SetDevice("R25010.5", 0);
-                    PLC.SetDevice("R25010.8", 1); // 2열 복귀
-                }
+                // An expired request must not block a separate row's inspection.
+                if (insp1 == 1 && !requestExpired[1] && !requestCompleted[1])
+                    ProcessInspection(1);
+                else if (insp2 == 1 && !requestExpired[2] && !requestCompleted[2])
+                    ProcessInspection(2);
             }
             catch (Exception ex)
             {
@@ -139,28 +135,69 @@ namespace LinerScan
             }
         }
 
-        private bool CanStartInference(int number)
+        private void UpdateInspectionRequest(int number, bool isOn)
         {
-            if (cameraManager != null && cameraManager.IsReady(number))
+            if (!isOn)
             {
-                inferenceBlockedLogged[number] = false;
-                return true;
+                requestActive[number] = false;
+                requestExpired[number] = false;
+                requestCompleted[number] = false;
+                return;
             }
 
-            if (!inferenceBlockedLogged[number])
+            if (requestActive[number]) return;
+            requestActive[number] = true;
+            requestExpired[number] = false;
+            requestCompleted[number] = false;
+            requestStarted[number] = DateTime.UtcNow;
+            LogText($"CAM{number} 검사 요청 수신");
+        }
+
+        private void ProcessInspection(int number)
+        {
+            DateTime deadline = requestStarted[number] + PcResponseWindow;
+            if (DateTime.UtcNow >= deadline)
             {
-                LogText($"CAM{number} 프레임 없음: 추론 보류, PLC 검사 비트 유지");
-                inferenceBlockedLogged[number] = true;
+                requestExpired[number] = true;
+                LogText($"CAM{number} 검사 응답 제한 시간 초과: 결과 비트 미전송");
+                return;
             }
-            return false;
+
+            if (cameraManager == null || !cameraManager.IsReady(number))
+            {
+                // A PLC request cannot wait for the normal 10 s outage grace period.
+                if (cameraManager != null &&
+                    DateTime.UtcNow - lastReconnectAttempt[number] >= InspectionReconnectInterval)
+                    AttemptReconnect(number);
+                return;
+            }
+
+            LoadRoiFromConfig();
+            string result = number == 1
+                ? RunInference1FromPLC(deadline)
+                : RunInference2FromPLC(deadline);
+            if (result == null) return;
+
+            // The result bit was written within the deadline in RunModelWithPlcControl.
+            if (number == 1)
+            {
+                PLC.SetDevice("R25010.0", 0);
+                PLC.SetDevice("R25010.3", 1);
+            }
+            else
+            {
+                PLC.SetDevice("R25010.5", 0);
+                PLC.SetDevice("R25010.8", 1);
+            }
+            requestCompleted[number] = true;
         }
 
         // Wait for a new callback frame; a cached frame cannot be reused for inspection.
-        private Mat WaitForNewFrame(int number, ref long lastSequence)
+        private Mat WaitForNewFrame(int number, ref long lastSequence, DateTime deadline)
         {
             if (cameraManager == null) return null;
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            while (watch.ElapsedMilliseconds < 1000)
+            while (watch.ElapsedMilliseconds < 1000 && DateTime.UtcNow < deadline)
             {
                 long sequence;
                 Mat frame = cameraManager.GetFrameAfter(number, lastSequence, out sequence);
@@ -253,7 +290,13 @@ namespace LinerScan
                 now - lastReconnectAttempt[number] < CameraRetryInterval)
                 return false;
 
-            lastReconnectAttempt[number] = now;
+            AttemptReconnect(number);
+            return false;
+        }
+
+        private void AttemptReconnect(int number)
+        {
+            lastReconnectAttempt[number] = DateTime.UtcNow;
             awaitingRecovery[number] = true;
             LogText($"CAM{number} 카메라 재연결 시도");
             try
@@ -264,9 +307,6 @@ namespace LinerScan
             {
                 LogText($"CAM{number} 카메라 재연결 오류: {ex.Message}");
             }
-
-            // 새 그래프가 열려도 실제 프레임이 들어오기 전까지는 복구로 판단하지 않습니다.
-            return false;
         }
 
         private Mat GetLatestFrameClone(int cameraNumber)
@@ -337,7 +377,7 @@ namespace LinerScan
         }
 
         // 기존 RunInference1FromPLC 수정: camera1 사용
-        private string RunInference1FromPLC()
+        private string RunInference1FromPLC(DateTime deadline)
         {
             if (cameraManager == null || !cameraManager.IsReady(1))
                 return null;
@@ -350,7 +390,7 @@ namespace LinerScan
 
             for (int i = 0; i < 11; i++)
             {
-                using (var frameMat = WaitForNewFrame(1, ref lastSequence))
+                using (var frameMat = WaitForNewFrame(1, ref lastSequence, deadline))
                 {
                     if (frameMat == null || frameMat.Empty())
                     {
@@ -408,18 +448,18 @@ namespace LinerScan
                 System.Threading.Thread.Sleep(200);
             }
 
-            if (cropped1List.Count == 0 || cropped2List.Count == 0)
+            if (cropped1List.Count != 10 || cropped2List.Count != 10)
             {
-                LogText("CAM1 crop 결과 없음: 추론 보류, PLC 검사 비트 유지");
+                LogText("CAM1 crop 10장 미확보: 추론 보류, PLC 검사 비트 유지");
                 DisposeCapturedFrames(cropped1List, cropped2List);
                 return null;
             }
 
-            return RunModelWithPlcControl(cropped1List, cropped2List, 1);
+            return RunModelWithPlcControl(cropped1List, cropped2List, 1, deadline);
         }
 
         // RunInference2FromPLC도 camera2를 사용
-        private string RunInference2FromPLC()
+        private string RunInference2FromPLC(DateTime deadline)
         {
             if (cameraManager == null || !cameraManager.IsReady(2))
                 return null;
@@ -432,7 +472,7 @@ namespace LinerScan
 
             for (int i = 0; i < 11; i++)
             {
-                using (var frameMat = WaitForNewFrame(2, ref lastSequence))
+                using (var frameMat = WaitForNewFrame(2, ref lastSequence, deadline))
                 {
                     if (frameMat == null || frameMat.Empty())
                     {
@@ -486,17 +526,17 @@ namespace LinerScan
                 System.Threading.Thread.Sleep(200);
             }
 
-            if (cropped1List.Count == 0 || cropped2List.Count == 0)
+            if (cropped1List.Count != 10 || cropped2List.Count != 10)
             {
-                LogText("CAM2 crop 결과 없음: 추론 보류, PLC 검사 비트 유지");
+                LogText("CAM2 crop 10장 미확보: 추론 보류, PLC 검사 비트 유지");
                 DisposeCapturedFrames(cropped1List, cropped2List);
                 return null;
             }
 
-            return RunModelWithPlcControl(cropped1List, cropped2List, 2);
+            return RunModelWithPlcControl(cropped1List, cropped2List, 2, deadline);
         }
 
-        private string RunModelWithPlcControl(List<Bitmap> cropped1List, List<Bitmap> cropped2List, int roiIndex)
+        private string RunModelWithPlcControl(List<Bitmap> cropped1List, List<Bitmap> cropped2List, int roiIndex, DateTime deadline)
         {
             try
             {
@@ -511,12 +551,17 @@ namespace LinerScan
                 string mode1 = labels1.GroupBy(x => x).OrderByDescending(g => g.Count()).First().Key;
                 string mode2 = labels2.GroupBy(x => x).OrderByDescending(g => g.Count()).First().Key;
 
+                if (DateTime.UtcNow >= deadline)
+                    return null;
+
                 // PLC에 ZR 쓰기: detect=1, none=0
                 WriteZR(54074, ModeToInt(mode1)); // mode1 → ZR54074
                 WriteZR(54075, ModeToInt(mode2)); // mode2 → ZR54075
 
 
                 // PLC 제어
+                if (DateTime.UtcNow >= deadline)
+                    return null;
                 if (roiIndex == 1)
                 {
                     if (mode1 == "none")
@@ -547,6 +592,9 @@ namespace LinerScan
                         LogRollerCount("롤러 사용횟수", 43163);  // ✅ 추가
                     }
                 }
+
+                if (DateTime.UtcNow >= deadline)
+                    return null;
 
                 if (mode1 == "none" && mode2 == "none")
                 {
