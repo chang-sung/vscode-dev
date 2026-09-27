@@ -160,6 +160,12 @@ namespace LinerScan.Cameras
         /// 반환된 Mat의 소유권은 호출자에게 있으며 사용 후 Dispose해야 합니다.
         /// </summary>
         public Mat GetLatestFrameClone() => IsReady ? frames.GetClone() : null;
+
+        public Mat GetFrameAfter(long sequence, out long currentSequence)
+        {
+            currentSequence = sequence;
+            return IsReady ? frames.GetCloneAfter(sequence, out currentSequence) : null;
+        }
         /// <summary>
         /// ISampleGrabberCB 인터페이스 구현을 위한 미사용 콜백입니다.
         /// 현재 BufferCB 방식으로 등록하므로 샘플을 처리하지 않고 성공 코드 0을 반환합니다.
