@@ -10,6 +10,7 @@ namespace LinerScan.Cameras
         private readonly object gate = new object();
         private Mat frame;
         private long timestamp;
+        private long sequence;
         private bool disposed;
         private const double MaximumAgeSeconds = 2;
 
@@ -27,6 +28,7 @@ namespace LinerScan.Cameras
                 frame?.Dispose();
                 frame = replacement;
                 timestamp = Stopwatch.GetTimestamp();
+                sequence++;
             }
         }
 
@@ -55,6 +57,16 @@ namespace LinerScan.Cameras
         public Mat GetClone()
         {
             lock (gate) return IsFresh() ? frame.Clone() : null;
+        }
+
+        // Returns only a frame newer than the last one used by this inspection.
+        public Mat GetCloneAfter(long previousSequence, out long currentSequence)
+        {
+            lock (gate)
+            {
+                currentSequence = sequence;
+                return IsFresh() && sequence > previousSequence ? frame.Clone() : null;
+            }
         }
 
         /// <summary>
