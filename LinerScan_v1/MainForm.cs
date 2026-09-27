@@ -598,13 +598,26 @@ namespace LinerScan
 
                 if (mode1 == "none" && mode2 == "none")
                 {
-                    PLC.SetDevice("R25010.1", 1);
+                    if (PLC.SetDevice("R25010.1", 1) != 0)
+                    {
+                        LogText("R25010.1 결과 비트 쓰기 실패");
+                        return null;
+                    }
                     LogText(" 롤러 교체 완료");
                 }
                 else if (mode1 == "detect" || mode2 == "detect")
                 {
-                    PLC.SetDevice("R25010.2", 1);
+                    if (PLC.SetDevice("R25010.2", 1) != 0)
+                    {
+                        LogText("R25010.2 결과 비트 쓰기 실패");
+                        return null;
+                    }
                     LogText("이형지 폐기 시작 (하나라도 detect)");
+                }
+                else
+                {
+                    LogText($"알 수 없는 추론 결과: {mode1}, {mode2}");
+                    return null;
                 }
 
                 // ✅ 최종 예측 결과는 로그 & 이미지 저장 분리
