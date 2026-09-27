@@ -12,7 +12,7 @@ namespace LinerScan.Cameras
         private long timestamp;
         private long sequence;
         private bool disposed;
-        private const double MaximumAgeSeconds = 2;
+        private const double MaximumAgeSeconds = 1;
 
         /// <summary>
         /// 입력 Mat을 복제하여 최신 프레임을 교체하고 수신 시각을 기록합니다.
@@ -41,7 +41,7 @@ namespace LinerScan.Cameras
         }
 
         /// <summary>
-        /// 해제되지 않은 프레임이 있고 마지막 저장 이후 2초 미만인지 판정합니다.
+        /// 해제되지 않은 프레임이 있고 마지막 저장 이후 1초 미만인지 판정합니다.
         /// 시스템 시각 변경의 영향을 받지 않는 Stopwatch 시간을 사용하며, gate 잠금 안에서 호출해야 합니다.
         /// </summary>
         private bool IsFresh()
