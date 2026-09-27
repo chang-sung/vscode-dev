@@ -32,8 +32,9 @@ namespace LinerScan
         private readonly DateTime?[] cameraMissingSince = new DateTime?[3];
         private readonly DateTime[] lastReconnectAttempt = new DateTime[3];
         private readonly bool[] awaitingRecovery = new bool[3];
-        private static readonly TimeSpan CameraLostDelay = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan CameraLostDelay = TimeSpan.Zero;
         private static readonly TimeSpan CameraRetryInterval = TimeSpan.FromSeconds(30);
+
         public MainForm()
         {
             InitializeComponent();
@@ -114,6 +115,11 @@ namespace LinerScan
 
                 if (INSP_1 == 1)
                 {
+                    if (cameraManager == null || !cameraManager.IsReady(1))
+                    {
+                        // 시작 비트를 유지하고 다음 타이머 주기에 다시 확인
+                        return;
+                    }
                     LoadRoiFromConfig();
                     RunInference1FromPLC();
 
@@ -123,6 +129,11 @@ namespace LinerScan
                 }
                 else if (INSP_2 == 1)
                 {
+                    if (cameraManager == null || !cameraManager.IsReady(2))
+                    {
+                        // 시작 비트를 유지하고 다음 타이머 주기에 다시 확인
+                        return;
+                    }
                     LoadRoiFromConfig();
                     RunInference2FromPLC();
 
