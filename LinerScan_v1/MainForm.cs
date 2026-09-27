@@ -29,6 +29,11 @@ namespace LinerScan
         private CameraManager cameraManager;
         private Cropper _cropper;
         private readonly Timer cameraStatusTimer = new Timer { Interval = 500 };
+        private readonly DateTime?[] cameraMissingSince = new DateTime?[3];
+        private readonly DateTime[] lastReconnectAttempt = new DateTime[3];
+        private readonly bool[] awaitingRecovery = new bool[3];
+        private static readonly TimeSpan CameraLostDelay = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan CameraRetryInterval = TimeSpan.FromSeconds(30);
         public MainForm()
         {
             InitializeComponent();
@@ -173,12 +178,52 @@ namespace LinerScan
 
         private void CameraStatusTimer_Tick(object sender, EventArgs e)
         {
-            bool ready1 = cameraManager != null && cameraManager.IsReady(1);
-            bool ready2 = cameraManager != null && cameraManager.IsReady(2);
-            Label_CAM1_Status.Text = ready1 ? "CAM1 정상 연결" : "CAM1 프레임 없음 / 설정 확인";
-            Label_CAM2_Status.Text = ready2 ? "CAM2 정상 연결" : "CAM2 프레임 없음 / 설정 확인";
+            bool ready1 = CheckAndRecoverCamera(1);
+            bool ready2 = CheckAndRecoverCamera(2);
+            Label_CAM1_Status.Text = ready1 ? "CAM1 정상 연결" : "CAM1 프레임 없음 / 복구 시도 중";
+            Label_CAM2_Status.Text = ready2 ? "CAM2 정상 연결" : "CAM2 프레임 없음 / 복구 시도 중";
             Label_CAM1_Status.ForeColor = ready1 ? Color.Green : Color.Red;
             Label_CAM2_Status.ForeColor = ready2 ? Color.Green : Color.Red;
+        }
+
+        private bool CheckAndRecoverCamera(int number)
+        {
+            if (cameraManager == null) return false;
+
+            if (cameraManager.IsReady(number))
+            {
+                if (awaitingRecovery[number])
+                    LogText($"CAM{number} 프레임 수신 복구 완료");
+                awaitingRecovery[number] = false;
+                cameraMissingSince[number] = null;
+                return true;
+            }
+
+            DateTime now = DateTime.UtcNow;
+            if (!cameraMissingSince[number].HasValue)
+            {
+                cameraMissingSince[number] = now;
+                LogText($"CAM{number} 프레임 수신 중단 감지");
+            }
+
+            if (now - cameraMissingSince[number].Value < CameraLostDelay ||
+                now - lastReconnectAttempt[number] < CameraRetryInterval)
+                return false;
+
+            lastReconnectAttempt[number] = now;
+            awaitingRecovery[number] = true;
+            LogText($"CAM{number} 카메라 재연결 시도");
+            try
+            {
+                cameraManager.Reconnect(number);
+            }
+            catch (Exception ex)
+            {
+                LogText($"CAM{number} 카메라 재연결 오류: {ex.Message}");
+            }
+
+            // 새 그래프가 열려도 실제 프레임이 들어오기 전까지는 복구로 판단하지 않습니다.
+            return false;
         }
 
         private Mat GetLatestFrameClone(int cameraNumber)
