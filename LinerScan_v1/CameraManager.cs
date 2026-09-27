@@ -9,6 +9,7 @@ namespace LinerScan.Cameras
     {
         private readonly Dictionary<int, DirectShowCamera> cameras = new Dictionary<int, DirectShowCamera>();
         private readonly Action<string> log;
+        private CameraConfiguration configuration;
         /// <summary>
         /// 카메라 연결 결과를 전달할 로그 콜백을 보관합니다. null이면 로그를 전달하지 않습니다.
         /// </summary>
@@ -23,6 +24,7 @@ namespace LinerScan.Cameras
         {
             configuration.Validate();
             Stop();
+            this.configuration = configuration;
             Open(1, configuration.Camera1DevicePath);
             Open(2, configuration.Camera2DevicePath);
         }
@@ -45,6 +47,27 @@ namespace LinerScan.Cameras
                 camera.Dispose();
                 log?.Invoke($"CAM{number} 연결 실패: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 프레임이 끊긴 카메라 한 대만 닫고 같은 DevicePath로 다시 연결합니다.
+        /// Start와 마찬가지로 소유 UI 스레드에서 호출합니다.
+        /// </summary>
+        public void Reconnect(int number)
+        {
+            if (configuration == null || (number != 1 && number != 2))
+                throw new InvalidOperationException($"CAM{number} 연결 설정이 없습니다.");
+
+            string path = number == 1 ? configuration.Camera1DevicePath : configuration.Camera2DevicePath;
+            DirectShowCamera oldCamera;
+            if (cameras.TryGetValue(number, out oldCamera))
+            {
+                cameras.Remove(number);
+                try { oldCamera.Dispose(); }
+                catch (Exception ex) { log?.Invoke($"CAM{number} 연결 해제 오류: {ex.Message}"); }
+            }
+
+            Open(number, path);
         }
 
         /// <summary>
