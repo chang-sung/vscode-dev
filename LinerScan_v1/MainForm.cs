@@ -32,6 +32,7 @@ namespace LinerScan
         private readonly DateTime?[] cameraMissingSince = new DateTime?[3];
         private readonly DateTime[] lastReconnectAttempt = new DateTime[3];
         private readonly bool[] awaitingRecovery = new bool[3];
+        private readonly bool[] inferenceBlockedLogged = new bool[3];
         private static readonly TimeSpan CameraLostDelay = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan CameraRetryInterval = TimeSpan.FromSeconds(30);
         public MainForm()
@@ -114,17 +115,18 @@ namespace LinerScan
 
                 if (INSP_1 == 1)
                 {
+                    if (!CanStartInference(1)) return;
                     LoadRoiFromConfig();
-                    RunInference1FromPLC();
+                    if (RunInference1FromPLC() == null) return;
 
                     PLC.SetDevice("R25010.0", 0);
                     PLC.SetDevice("R25010.3", 1); // 1열 복귀
-
                 }
                 else if (INSP_2 == 1)
                 {
+                    if (!CanStartInference(2)) return;
                     LoadRoiFromConfig();
-                    RunInference2FromPLC();
+                    if (RunInference2FromPLC() == null) return;
 
                     PLC.SetDevice("R25010.5", 0);
                     PLC.SetDevice("R25010.8", 1); // 2열 복귀
@@ -135,6 +137,47 @@ namespace LinerScan
                 plc_mon_timer.Stop();
                 MessageBox.Show($"PLC 감시 중 오류 발생: {ex.Message}");
             }
+        }
+
+        private bool CanStartInference(int number)
+        {
+            if (cameraManager != null && cameraManager.IsReady(number))
+            {
+                inferenceBlockedLogged[number] = false;
+                return true;
+            }
+
+            if (!inferenceBlockedLogged[number])
+            {
+                LogText($"CAM{number} 프레임 없음: 추론 보류, PLC 검사 비트 유지");
+                inferenceBlockedLogged[number] = true;
+            }
+            return false;
+        }
+
+        // Wait for a new callback frame; a cached frame cannot be reused for inspection.
+        private Mat WaitForNewFrame(int number, ref long lastSequence)
+        {
+            if (cameraManager == null) return null;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            while (watch.ElapsedMilliseconds < 1000)
+            {
+                long sequence;
+                Mat frame = cameraManager.GetFrameAfter(number, lastSequence, out sequence);
+                if (frame != null)
+                {
+                    lastSequence = sequence;
+                    return frame;
+                }
+                System.Threading.Thread.Sleep(50);
+            }
+            return null;
+        }
+
+        private static void DisposeCapturedFrames(List<Bitmap> first, List<Bitmap> second)
+        {
+            foreach (var image in first) image.Dispose();
+            foreach (var image in second) image.Dispose();
         }
 
         private void InitializeCameras()
@@ -297,21 +340,23 @@ namespace LinerScan
         private string RunInference1FromPLC()
         {
             if (cameraManager == null || !cameraManager.IsReady(1))
-                return "❌ camera1이 열려있지 않습니다.";
+                return null;
 
             var cropped1List = new List<Bitmap>();
             var cropped2List = new List<Bitmap>();
+            long lastSequence = 0;
 
             System.Threading.Thread.Sleep(200);
 
             for (int i = 0; i < 11; i++)
             {
-                using (var frameMat = GetLatestFrameClone(1))
+                using (var frameMat = WaitForNewFrame(1, ref lastSequence))
                 {
                     if (frameMat == null || frameMat.Empty())
                     {
-                        System.Threading.Thread.Sleep(100);
-                        continue;
+                        LogText("CAM1 새 프레임 수신 실패: 추론 중단, PLC 검사 비트 유지");
+                        DisposeCapturedFrames(cropped1List, cropped2List);
+                        return null;
                     }
 
                     // i==1에 원본 저장(원하면 유지)
@@ -364,7 +409,11 @@ namespace LinerScan
             }
 
             if (cropped1List.Count == 0 || cropped2List.Count == 0)
-                return "❌ crop 결과가 없습니다(템플릿 매칭 실패 가능).";
+            {
+                LogText("CAM1 crop 결과 없음: 추론 보류, PLC 검사 비트 유지");
+                DisposeCapturedFrames(cropped1List, cropped2List);
+                return null;
+            }
 
             return RunModelWithPlcControl(cropped1List, cropped2List, 1);
         }
@@ -373,21 +422,23 @@ namespace LinerScan
         private string RunInference2FromPLC()
         {
             if (cameraManager == null || !cameraManager.IsReady(2))
-                return "❌ camera2가 열려있지 않습니다.";
+                return null;
 
             var cropped1List = new List<Bitmap>();
             var cropped2List = new List<Bitmap>();
+            long lastSequence = 0;
 
             System.Threading.Thread.Sleep(200);
 
             for (int i = 0; i < 11; i++)
             {
-                using (var frameMat = GetLatestFrameClone(2))
+                using (var frameMat = WaitForNewFrame(2, ref lastSequence))
                 {
                     if (frameMat == null || frameMat.Empty())
                     {
-                        System.Threading.Thread.Sleep(100);
-                        continue;
+                        LogText("CAM2 새 프레임 수신 실패: 추론 중단, PLC 검사 비트 유지");
+                        DisposeCapturedFrames(cropped1List, cropped2List);
+                        return null;
                     }
 
                     if (i == 1)
@@ -436,7 +487,11 @@ namespace LinerScan
             }
 
             if (cropped1List.Count == 0 || cropped2List.Count == 0)
-                return "❌ crop 결과가 없습니다(템플릿 매칭 실패 가능).";
+            {
+                LogText("CAM2 crop 결과 없음: 추론 보류, PLC 검사 비트 유지");
+                DisposeCapturedFrames(cropped1List, cropped2List);
+                return null;
+            }
 
             return RunModelWithPlcControl(cropped1List, cropped2List, 2);
         }
