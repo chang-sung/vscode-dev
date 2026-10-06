@@ -4,10 +4,11 @@ using OpenCvSharp;
 
 namespace LinerScan.Cameras
 {
-    // Lifecycle methods are called on the owning UI thread; frame access is thread safe.
+    // Lifecycle methods stay on the owning UI thread; queries from the PLC worker are synchronized.
     public sealed class CameraManager : IDisposable
     {
         private readonly Dictionary<int, DirectShowCamera> cameras = new Dictionary<int, DirectShowCamera>();
+        private readonly object cameraSync = new object();
         private readonly Action<string> log;
         private CameraConfiguration configuration;
         /// <summary>
@@ -22,11 +23,14 @@ namespace LinerScan.Cameras
         /// </summary>
         public void Start(CameraConfiguration configuration)
         {
-            configuration.Validate();
-            Stop();
-            this.configuration = configuration;
-            Open(1, configuration.Camera1DevicePath);
-            Open(2, configuration.Camera2DevicePath);
+            lock (cameraSync)
+            {
+                configuration.Validate();
+                Stop();
+                this.configuration = configuration;
+                Open(1, configuration.Camera1DevicePath);
+                Open(2, configuration.Camera2DevicePath);
+            }
         }
 
         /// <summary>
@@ -55,19 +59,22 @@ namespace LinerScan.Cameras
         /// </summary>
         public void Reconnect(int number)
         {
-            if (configuration == null || (number != 1 && number != 2))
-                throw new InvalidOperationException($"CAM{number} 연결 설정이 없습니다.");
-
-            string path = number == 1 ? configuration.Camera1DevicePath : configuration.Camera2DevicePath;
-            DirectShowCamera oldCamera;
-            if (cameras.TryGetValue(number, out oldCamera))
+            lock (cameraSync)
             {
-                cameras.Remove(number);
-                try { oldCamera.Dispose(); }
-                catch (Exception ex) { log?.Invoke($"CAM{number} 연결 해제 오류: {ex.Message}"); }
-            }
+                if (configuration == null || (number != 1 && number != 2))
+                    throw new InvalidOperationException($"CAM{number} 연결 설정이 없습니다.");
 
-            Open(number, path);
+                string path = number == 1 ? configuration.Camera1DevicePath : configuration.Camera2DevicePath;
+                DirectShowCamera oldCamera;
+                if (cameras.TryGetValue(number, out oldCamera))
+                {
+                    cameras.Remove(number);
+                    try { oldCamera.Dispose(); }
+                    catch (Exception ex) { log?.Invoke($"CAM{number} 연결 해제 오류: {ex.Message}"); }
+                }
+
+                Open(number, path);
+            }
         }
 
         /// <summary>
@@ -75,8 +82,11 @@ namespace LinerScan.Cameras
         /// </summary>
         public bool IsReady(int number)
         {
-            DirectShowCamera camera;
-            return cameras.TryGetValue(number, out camera) && camera.IsReady;
+            lock (cameraSync)
+            {
+                DirectShowCamera camera;
+                return cameras.TryGetValue(number, out camera) && camera.IsReady;
+            }
         }
 
         /// <summary>
@@ -85,8 +95,11 @@ namespace LinerScan.Cameras
         /// </summary>
         public Mat GetLatestFrameClone(int number)
         {
-            DirectShowCamera camera;
-            return cameras.TryGetValue(number, out camera) ? camera.GetLatestFrameClone() : null;
+            lock (cameraSync)
+            {
+                DirectShowCamera camera;
+                return cameras.TryGetValue(number, out camera) ? camera.GetLatestFrameClone() : null;
+            }
         }
 
         /// <summary>
@@ -95,8 +108,11 @@ namespace LinerScan.Cameras
         /// </summary>
         public void Stop()
         {
-            try { foreach (var camera in cameras.Values) camera.Dispose(); }
-            finally { cameras.Clear(); }
+            lock (cameraSync)
+            {
+                try { foreach (var camera in cameras.Values) camera.Dispose(); }
+                finally { cameras.Clear(); }
+            }
         }
         /// <summary>
         /// Stop을 호출하여 관리 중인 카메라 연결과 프레임 자원을 정리합니다.
