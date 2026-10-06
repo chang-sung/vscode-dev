@@ -32,7 +32,8 @@ namespace LinerScan
         private ActProgType64 PLC;
         private Thread plcThread;
         private readonly ManualResetEventSlim plcStop = new ManualResetEventSlim(false);
-        private int plcPollInterval;
+        // PLC 감시 주기(ms). 디자이너 타이머와 독립적으로 설정합니다.
+        private const int PlcPollIntervalMilliseconds = 1000;
         private volatile bool closing;
         private bool shutdownComplete;
 
@@ -62,8 +63,6 @@ namespace LinerScan
         private void MainForm_Shown(object sender, EventArgs e)
         {
             if (plcThread != null || closing) return;
-            plc_mon_timer.Stop();
-            plcPollInterval = plc_mon_timer.Interval;
             InitializeCameras();
             plcThread = new Thread(PlcWorker) { IsBackground = true, Name = "PLC inspection" };
             plcThread.SetApartmentState(ApartmentState.STA);
@@ -97,7 +96,7 @@ namespace LinerScan
                 while (!plcStop.IsSet)
                 {
                     PollPLC();
-                    if (plcStop.Wait(plcPollInterval)) break;
+                    if (plcStop.Wait(PlcPollIntervalMilliseconds)) break;
                 }
             }
             catch (OperationCanceledException) when (plcStop.IsSet) { }
@@ -194,12 +193,6 @@ namespace LinerScan
                 SetPlcStatus($"예외 발생 : {ex.Message}", Color.Red);
             }
             return false;
-        }
-
-        // Designer에 남아 있는 이벤트 연결은 호환성을 위해 유지합니다.
-        private void plc_mon_timer_Tick(object sender, EventArgs e)
-        {
-            plc_mon_timer.Stop();
         }
 
         private void PollPLC()
@@ -837,7 +830,6 @@ namespace LinerScan
             if (e.Cancel) return;
             e.Cancel = true;
             closing = true;
-            plc_mon_timer.Stop();
             cameraStatusTimer.Stop();
             plcStop.Set();
 
