@@ -34,6 +34,9 @@ namespace LinerScan
         private readonly ManualResetEventSlim plcStop = new ManualResetEventSlim(false);
         // PLC 감시 주기(ms). 디자이너 타이머와 독립적으로 설정합니다.
         private const int PlcPollIntervalMilliseconds = 100;
+        // 검사 실패한 요청은 PLC 시작 비트가 OFF될 때까지 다시 실행하지 않습니다.
+        // 이 배열은 PLC 전용 스레드에서만 사용합니다.
+        private readonly bool[] inspectionFailedAwaitingReset = new bool[3];
         private volatile bool closing;
         private bool shutdownComplete;
 
@@ -217,7 +220,11 @@ namespace LinerScan
             short insp1, insp2;
             CheckPlcResult(PLC.GetDevice2("R25010.0", out insp1), "1열 시작 비트 읽기");
             CheckPlcResult(PLC.GetDevice2("R25010.5", out insp2), "2열 시작 비트 읽기");
-            int number = insp1 == 1 ? 1 : insp2 == 1 ? 2 : 0;
+            if (insp1 == 0) inspectionFailedAwaitingReset[1] = false;
+            if (insp2 == 0) inspectionFailedAwaitingReset[2] = false;
+
+            int number = insp1 == 1 && !inspectionFailedAwaitingReset[1] ? 1
+                : insp2 == 1 && !inspectionFailedAwaitingReset[2] ? 2 : 0;
             if (number == 0 || cameraManager == null || !cameraManager.IsReady(number)) return;
 
             // ROI는 검사 시작 시 한 번 읽습니다. 설정 창에서 저장한 값은 다음 검사에 반영됩니다.
@@ -225,7 +232,14 @@ namespace LinerScan
             string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
             CheckPlcStop();
             if (result.StartsWith("❌"))
-                throw new InvalidOperationException(result);
+            {
+                inspectionFailedAwaitingReset[number] = true;
+                LogText(number + "열 검사 실패 (PLC 감시 계속): " + result +
+                    " 시작 비트 OFF 후 다음 요청 대기.");
+                // 결과/완료 비트와 시작 비트는 변경하지 않습니다.
+                // 설비의 기존 타임아웃 알람 및 엔지니어 조치에 맡깁니다.
+                return;
+            }
 
             SetPlcDevice(number == 1 ? "R25010.0" : "R25010.5", 0);
             SetPlcDevice(number == 1 ? "R25010.3" : "R25010.8", 1);
