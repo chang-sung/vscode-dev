@@ -321,67 +321,73 @@ namespace LinerScan
 
         private void LoadRoiConfig()
         {
-            if (File.Exists(roiConfigPath))
+            lock (RoiConfig.FileSync)
             {
-                var json = File.ReadAllText(roiConfigPath);
-                var config = JsonConvert.DeserializeObject<RoiConfig>(json);
-
-                if (roiIndex == 1)
+                if (File.Exists(roiConfigPath))
                 {
-                    roi1_A = config.Roi1_A;
-                    roi1_B = config.Roi1_B;
+                    var json = File.ReadAllText(roiConfigPath);
+                    var config = JsonConvert.DeserializeObject<RoiConfig>(json);
 
-                    cropOffsetXA = config.Roi1_A_CropOffsetX;
-                    cropOffsetYA = config.Roi1_A_CropOffsetY;
-                    cropOffsetXB = config.Roi1_B_CropOffsetX;
-                    cropOffsetYB = config.Roi1_B_CropOffsetY;
-                }
-                else if (roiIndex == 2)
-                {
-                    roi1_A = config.Roi2_A;
-                    roi1_B = config.Roi2_B;
+                    if (roiIndex == 1)
+                    {
+                        roi1_A = config.Roi1_A;
+                        roi1_B = config.Roi1_B;
 
-                    cropOffsetXA = config.Roi2_A_CropOffsetX;
-                    cropOffsetYA = config.Roi2_A_CropOffsetY;
-                    cropOffsetXB = config.Roi2_B_CropOffsetX;
-                    cropOffsetYB = config.Roi2_B_CropOffsetY;
+                        cropOffsetXA = config.Roi1_A_CropOffsetX;
+                        cropOffsetYA = config.Roi1_A_CropOffsetY;
+                        cropOffsetXB = config.Roi1_B_CropOffsetX;
+                        cropOffsetYB = config.Roi1_B_CropOffsetY;
+                    }
+                    else if (roiIndex == 2)
+                    {
+                        roi1_A = config.Roi2_A;
+                        roi1_B = config.Roi2_B;
+
+                        cropOffsetXA = config.Roi2_A_CropOffsetX;
+                        cropOffsetYA = config.Roi2_A_CropOffsetY;
+                        cropOffsetXB = config.Roi2_B_CropOffsetX;
+                        cropOffsetYB = config.Roi2_B_CropOffsetY;
+                    }
                 }
             }
         }
 
         private void SaveRoiConfig()
         {
-            RoiConfig config;
-
-            if (File.Exists(roiConfigPath))
-                config = JsonConvert.DeserializeObject<RoiConfig>(File.ReadAllText(roiConfigPath));
-            else
-                config = new RoiConfig();
-
-
-            if (roiIndex == 1)
+            lock (RoiConfig.FileSync)
             {
-                config.Roi1_A = roi1_A;
-                config.Roi1_B = roi1_B;
+                RoiConfig config;
 
-                config.Roi1_A_CropOffsetX = cropOffsetXA;
-                config.Roi1_A_CropOffsetY = cropOffsetYA;
-                config.Roi1_B_CropOffsetX = cropOffsetXB;
-                config.Roi1_B_CropOffsetY = cropOffsetYB;
+                if (File.Exists(roiConfigPath))
+                    config = JsonConvert.DeserializeObject<RoiConfig>(File.ReadAllText(roiConfigPath));
+                else
+                    config = new RoiConfig();
+
+
+                if (roiIndex == 1)
+                {
+                    config.Roi1_A = roi1_A;
+                    config.Roi1_B = roi1_B;
+
+                    config.Roi1_A_CropOffsetX = cropOffsetXA;
+                    config.Roi1_A_CropOffsetY = cropOffsetYA;
+                    config.Roi1_B_CropOffsetX = cropOffsetXB;
+                    config.Roi1_B_CropOffsetY = cropOffsetYB;
+                }
+                else if (roiIndex == 2)
+                {
+                    config.Roi2_A = roi1_A;
+                    config.Roi2_B = roi1_B;
+
+                    config.Roi2_A_CropOffsetX = cropOffsetXA;
+                    config.Roi2_A_CropOffsetY = cropOffsetYA;
+                    config.Roi2_B_CropOffsetX = cropOffsetXB;
+                    config.Roi2_B_CropOffsetY = cropOffsetYB;
+                }
+
+                var json = JsonConvert.SerializeObject(config, Formatting.Indented);
+                File.WriteAllText(roiConfigPath, json);
             }
-            else if (roiIndex == 2)
-            {
-                config.Roi2_A = roi1_A;
-                config.Roi2_B = roi1_B;
-
-                config.Roi2_A_CropOffsetX = cropOffsetXA;
-                config.Roi2_A_CropOffsetY = cropOffsetYA;
-                config.Roi2_B_CropOffsetX = cropOffsetXB;
-                config.Roi2_B_CropOffsetY = cropOffsetYB;
-            }
-
-            var json = JsonConvert.SerializeObject(config, Formatting.Indented);
-            File.WriteAllText(roiConfigPath, json);
         }
 
         private void UpdateRoiLabels()
