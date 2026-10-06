@@ -31,6 +31,8 @@ namespace LinerScan
         // PLC COM 객체는 생성부터 종료까지 이 전용 STA 스레드만 사용합니다.
         private ActProgType64 PLC;
         private Thread plcThread;
+        // 실패한 요청은 시작 비트가 OFF된 뒤 다음 ON 요청부터 다시 검사합니다.
+        private readonly bool[] failedInspection = new bool[3];
         private readonly ManualResetEventSlim plcStop = new ManualResetEventSlim(false);
         // PLC 감시 주기(ms). 디자이너 타이머와 독립적으로 설정합니다.
         private const int PlcPollIntervalMilliseconds = 100;
@@ -153,7 +155,12 @@ namespace LinerScan
         private void CheckPlcResult(int result, string operation)
         {
             if (result != 0)
-                throw new InvalidOperationException(operation + " 실패: 0x" + result.ToString("X8"));
+                throw new PlcCommunicationException(operation + " 실패: 0x" + result.ToString("X8"));
+        }
+
+        private sealed class PlcCommunicationException : Exception
+        {
+            public PlcCommunicationException(string message) : base(message) { }
         }
 
         private void SetPlcDevice(string device, int value)
@@ -217,18 +224,53 @@ namespace LinerScan
             short insp1, insp2;
             CheckPlcResult(PLC.GetDevice2("R25010.0", out insp1), "1열 시작 비트 읽기");
             CheckPlcResult(PLC.GetDevice2("R25010.5", out insp2), "2열 시작 비트 읽기");
-            int number = insp1 == 1 ? 1 : insp2 == 1 ? 2 : 0;
+
+            if (insp1 != 1) failedInspection[1] = false;
+            if (insp2 != 1) failedInspection[2] = false;
+
+            // 실패한 열은 보류하되 다른 열의 새로운 요청은 계속 처리합니다.
+            int number = insp1 == 1 && !failedInspection[1] ? 1
+                : insp2 == 1 && !failedInspection[2] ? 2 : 0;
             if (number == 0 || cameraManager == null || !cameraManager.IsReady(number)) return;
 
-            // ROI는 검사 시작 시 한 번 읽습니다. 설정 창에서 저장한 값은 다음 검사에 반영됩니다.
-            LoadRoiFromConfig();
-            string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
-            CheckPlcStop();
+            string result;
+            try
+            {
+                // 이번 검사에는 시작 시 읽은 ROI를 사용합니다.
+                LoadRoiFromConfig();
+                result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
+                CheckPlcStop();
+            }
+            catch (OperationCanceledException) when (plcStop.IsSet)
+            {
+                throw;
+            }
+            catch (PlcCommunicationException)
+            {
+                // 통신 실패는 검사 실패와 분리해 기존 PLC 오류 처리로 전달합니다.
+                throw;
+            }
+            catch (Exception ex)
+            {
+                LogInspectionFailure(number, ex.Message);
+                return;
+            }
+
             if (result.StartsWith("❌"))
-                throw new InvalidOperationException(result);
+            {
+                LogInspectionFailure(number, result);
+                return;
+            }
 
             SetPlcDevice(number == 1 ? "R25010.0" : "R25010.5", 0);
             SetPlcDevice(number == 1 ? "R25010.3" : "R25010.8", 1);
+        }
+
+        private void LogInspectionFailure(int number, string message)
+        {
+            failedInspection[number] = true;
+            LogText(number + "열 검사 실패: " + message
+                + " / PLC 감시 유지 (시작 비트 OFF 후 다음 요청 대기)");
         }
 
         private void InitializeCameras()
