@@ -33,7 +33,7 @@ namespace LinerScan
         private Thread plcThread;
         private readonly ManualResetEventSlim plcStop = new ManualResetEventSlim(false);
         // PLC 감시 주기(ms). 디자이너 타이머와 독립적으로 설정합니다.
-        private const int PlcPollIntervalMilliseconds = 1000;
+        private const int PlcPollIntervalMilliseconds = 100;
         private volatile bool closing;
         private bool shutdownComplete;
 
@@ -43,12 +43,28 @@ namespace LinerScan
         private readonly DateTime?[] cameraMissingSince = new DateTime?[3];
         private readonly DateTime[] lastReconnectAttempt = new DateTime[3];
         private readonly bool[] awaitingRecovery = new bool[3];
-        private static readonly TimeSpan CameraLostDelay = TimeSpan.Zero;
+        private static readonly TimeSpan CameraLostDelay = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan CameraRetryInterval = TimeSpan.FromSeconds(30);
+        private bool exitRequested = false;
+
 
         public MainForm()
         {
             InitializeComponent();
+
+            notifyIcon1.DoubleClick += (s, e) => RestoreWindow();
+            var trayMenu = new ContextMenuStrip(components);
+
+            trayMenu.Items.Add("열기", null, (s, e) => RestoreWindow());
+
+            trayMenu.Items.Add("종료", null, (s, e) =>
+            {
+                exitRequested = true;
+                Close();
+            });
+
+            notifyIcon1.ContextMenuStrip = trayMenu;
+
             TcpImgSender.Logger = LogText;   // ✅ 추가: TcpImgSender 로그가 tb_logbox + 파일로 저장됨
 
             // ✅ 프로그램 켜질 때 미리 연결
@@ -817,44 +833,96 @@ namespace LinerScan
             return string.Equals(mode, "detect", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         }
 
+        private void RestoreWindow()
+        {
+            if (closing) return;
+
+            Show();
+
+            if (WindowState == FormWindowState.Minimized)
+                WindowState = FormWindowState.Normal;
+
+            Activate();
+            notifyIcon1.Visible = false;
+        }
+
         // 종료 시 카메라 해제
         protected override async void OnFormClosing(FormClosingEventArgs e)
         {
+            // 자원 정리가 끝난 뒤에는 실제 종료 허용
             if (shutdownComplete)
             {
                 base.OnFormClosing(e);
                 return;
             }
-            if (closing) { e.Cancel = true; return; }
+
+            // 종료 처리 중 중복 요청 방지
+            if (closing)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            // X 버튼 / Alt+F4: 종료하지 않고 트레이로 숨기기
+            if (!exitRequested &&
+                e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                notifyIcon1.Visible = true;
+                Hide();
+                return;
+            }
+
+            // 트레이 메뉴의 '종료' 등 실제 종료 요청
             base.OnFormClosing(e);
-            if (e.Cancel) return;
+
+            if (e.Cancel)
+                return;
+
             e.Cancel = true;
             closing = true;
+
+            // 카메라 상태 감시와 PLC 작업에 종료 요청
             cameraStatusTimer.Stop();
             plcStop.Set();
 
-            // UI 메시지 루프를 유지해 진행 중인 Invoke와 PLC 호출이 끝날 수 있게 합니다.
+            // UI를 유지하면서 PLC 스레드 종료 대기
             await Task.Yield();
+
             if (plcThread != null)
                 await Task.Run(() => plcThread.Join());
 
+            // PLC 스레드 종료 후 자원 해제
             TcpImgSender.Stop();
+
             cameraStatusTimer.Dispose();
+
             cameraManager?.Dispose();
             cameraManager = null;
+
             _cropper?.Dispose();
             _cropper = null;
+
             classifier?.Dispose();
             classifier = null;
+
             foreach (var box in new[] { pb_1_A, pb_1_B, pb_2_A, pb_2_B })
             {
                 box.Image?.Dispose();
                 box.Image = null;
             }
+
             plcStop.Dispose();
+
+            // 트레이 아이콘 제거
+            notifyIcon1.Visible = false;
+            notifyIcon1.Dispose();
+
+            // 다시 Close를 호출하면 위의 shutdownComplete 분기로 실제 종료
             shutdownComplete = true;
             Close();
         }
-    }
 
+        
+    }
 }
