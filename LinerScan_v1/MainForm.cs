@@ -33,7 +33,6 @@ namespace LinerScan
         private Thread plcThread;
         private readonly ManualResetEventSlim plcStop = new ManualResetEventSlim(false);
         private int plcPollInterval;
-        private int inspectionOrRoiActive;
         private volatile bool closing;
         private bool shutdownComplete;
 
@@ -210,27 +209,17 @@ namespace LinerScan
             CheckPlcResult(PLC.GetDevice2("R25010.0", out insp1), "1열 시작 비트 읽기");
             CheckPlcResult(PLC.GetDevice2("R25010.5", out insp2), "2열 시작 비트 읽기");
             int number = insp1 == 1 ? 1 : insp2 == 1 ? 2 : 0;
-            if (number == 0 || Interlocked.CompareExchange(ref inspectionOrRoiActive, 1, 0) != 0)
-                return;
+            if (number == 0 || cameraManager == null || !cameraManager.IsReady(number)) return;
 
-            try
-            {
-                if (cameraManager == null || !cameraManager.IsReady(number)) return;
-                LoadRoiFromConfig();
-                string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
-                CheckPlcStop();
-                if (result.StartsWith("❌"))
-                {
-                    // 검사 실패 시 정상 완료로 응답하지 않고 감시를 중단합니다.
-                    throw new InvalidOperationException(result);
-                }
-                SetPlcDevice(number == 1 ? "R25010.0" : "R25010.5", 0);
-                SetPlcDevice(number == 1 ? "R25010.3" : "R25010.8", 1);
-            }
-            finally
-            {
-                Interlocked.Exchange(ref inspectionOrRoiActive, 0);
-            }
+            // ROI는 검사 시작 시 한 번 읽습니다. 설정 창에서 저장한 값은 다음 검사에 반영됩니다.
+            LoadRoiFromConfig();
+            string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
+            CheckPlcStop();
+            if (result.StartsWith("❌"))
+                throw new InvalidOperationException(result);
+
+            SetPlcDevice(number == 1 ? "R25010.0" : "R25010.5", 0);
+            SetPlcDevice(number == 1 ? "R25010.3" : "R25010.8", 1);
         }
 
         private void InitializeCameras()
@@ -370,23 +359,26 @@ namespace LinerScan
 
         private void LoadRoiFromConfig()
         {
-            string roiConfigPath = "config.json";
-            if (File.Exists(roiConfigPath))
+            lock (RoiConfig.FileSync)
             {
-                var json = File.ReadAllText(roiConfigPath);
-                var config = JsonConvert.DeserializeObject<RoiConfig>(json);
+                string roiConfigPath = "config.json";
+                if (File.Exists(roiConfigPath))
+                {
+                    var json = File.ReadAllText(roiConfigPath);
+                    var config = JsonConvert.DeserializeObject<RoiConfig>(json);
 
-                roi1_A = config.Roi1_A;
-                roi1_B = config.Roi1_B;
-                roi2_A = config.Roi2_A;
-                roi2_B = config.Roi2_B;
-            }
-            else
-            {
-                roi1_A = new Rectangle(453, 238, 300, 500);
-                roi1_B = new Rectangle(1003, 237, 300, 500);
-                roi2_A = new Rectangle(453, 400, 300, 500);
-                roi2_B = new Rectangle(1003, 400, 300, 500);
+                    roi1_A = config.Roi1_A;
+                    roi1_B = config.Roi1_B;
+                    roi2_A = config.Roi2_A;
+                    roi2_B = config.Roi2_B;
+                }
+                else
+                {
+                    roi1_A = new Rectangle(453, 238, 300, 500);
+                    roi1_B = new Rectangle(1003, 237, 300, 500);
+                    roi2_A = new Rectangle(453, 400, 300, 500);
+                    roi2_B = new Rectangle(1003, 400, 300, 500);
+                }
             }
         }
 
@@ -602,18 +594,19 @@ namespace LinerScan
 
         private void OpenRoiSettings(int number)
         {
-            if (closing) return;
-            if (Interlocked.CompareExchange(ref inspectionOrRoiActive, 1, 0) != 0)
+            if (closing || _cropper == null) return;
+            // 설정용과 검사용의 마크 이미지 및 매칭 잠금을 분리합니다.
+            using (var roiCropper = new Cropper
             {
-                MessageBox.Show("검사 중에는 ROI 설정을 변경할 수 없습니다.");
-                return;
-            }
-            try
+                DefaultMinScore = _cropper.DefaultMinScore,
+                DefaultExtraDown = _cropper.DefaultExtraDown,
+                DefaultExtraX = _cropper.DefaultExtraX
+            })
             {
-                using (var roiForm = new RoiForm(number, () => GetLatestFrameClone(number), _cropper))
-                    if (roiForm.ShowDialog(this) == DialogResult.OK) LoadRoiFromConfig();
+                roiCropper.LoadMarks(Path.Combine(Application.StartupPath, "templates"), "mark*.png");
+                using (var roiForm = new RoiForm(number, () => GetLatestFrameClone(number), roiCropper))
+                    roiForm.ShowDialog(this);
             }
-            finally { Interlocked.Exchange(ref inspectionOrRoiActive, 0); }
         }
 
         private void LogText(string message)
