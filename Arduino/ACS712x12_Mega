@@ -1,0 +1,131 @@
+// ===============================
+// ACS712 x 12 on Arduino MEGA2560
+// ===============================
+
+const int SENSOR_COUNT = 12;
+
+const int ACS_PINS[SENSOR_COUNT] = {
+  A0, A8, A1, A9,     // ULD
+  A2, A10, A3, A11,   // CH
+  A4, A12, A5, A13    // LD
+};
+
+float sensitivity[SENSOR_COUNT] = {
+  0.100, 0.100, 0.100, 0.100, 0.100, 0.100,
+  0.100, 0.100, 0.100, 0.100, 0.100, 0.100
+};
+
+float zeroOffsetV[SENSOR_COUNT] = {
+  2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
+  2.5, 2.5, 2.5, 2.5, 2.5, 2.5
+};
+
+const int CAL_SAMPLES = 500;
+
+const float ADC_REF = 5.0;
+const float ADC_RESOLUTION = 1023.0;
+
+const unsigned long SAMPLE_INTERVAL_MS = 100;
+unsigned long lastSampleTime = 0;
+
+float voltageSum[SENSOR_COUNT] = {0};
+float currentSum[SENSOR_COUNT] = {0};
+
+unsigned long sampleCount = 0;
+
+float readVoltageOnce(int pin) {
+  analogRead(pin);          // 더미 읽기
+  delayMicroseconds(100);   // 안정화
+
+  int adc = analogRead(pin);
+  return adc * (ADC_REF / ADC_RESOLUTION);
+}
+
+float calibrateZeroOffset(int pin) {
+  long sum = 0;
+
+  for (int i = 0; i < CAL_SAMPLES; i++) {
+    sum += analogRead(pin);
+    delay(2);
+  }
+
+  float adc = (float)sum / CAL_SAMPLES;
+  return adc * (ADC_REF / ADC_RESOLUTION);
+}
+
+void accumulateSensorData() {
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+    float vout = readVoltageOnce(ACS_PINS[i]);
+
+    float amps = (vout - zeroOffsetV[i]) / sensitivity[i];
+
+    if (abs(amps) < 0.03) {
+      amps = 0.0;
+    }
+
+    voltageSum[i] += vout;
+    currentSum[i] += amps;
+  }
+
+  sampleCount++;
+}
+
+void sendAverageDataAndReset() {
+  if (sampleCount == 0) {
+    Serial.println("NO_DATA");
+    return;
+  }
+
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+    float avgAmps = currentSum[i] / sampleCount;
+
+    Serial.print("S");
+    Serial.print(i + 1);
+    Serial.print(",");
+    Serial.print(avgAmps, 3);
+
+    if (i < SENSOR_COUNT - 1) {
+      Serial.print(",");
+    }
+  }
+
+  Serial.println();
+
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+    voltageSum[i] = 0.0;
+    currentSum[i] = 0.0;
+  }
+
+  sampleCount = 0;
+}
+
+void setup() {
+  Serial.begin(9600);
+  Serial.setTimeout(100);
+
+  delay(1500);
+
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+    zeroOffsetV[i] = calibrateZeroOffset(ACS_PINS[i]);
+  }
+
+  lastSampleTime = millis();
+}
+
+void loop() {
+  unsigned long now = millis();
+
+  if (now - lastSampleTime >= SAMPLE_INTERVAL_MS) {
+    lastSampleTime = now;
+    accumulateSensorData();
+  }
+
+  if (Serial.available() > 0) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+
+    if (cmd.equalsIgnoreCase("REQ_DATA")) {
+      sendAverageDataAndReset();
+    }
+  }
+}
