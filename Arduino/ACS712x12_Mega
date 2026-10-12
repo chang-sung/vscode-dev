@@ -5,9 +5,10 @@
 const int SENSOR_COUNT = 12;
 
 const int ACS_PINS[SENSOR_COUNT] = {
-  A0, A8, A1, A9,     // ULD
-  A2, A10, A3, A11,   // CH
-  A4, A12, A5, A13    // LD
+  
+  A2, A10, A3, A11,   // LD
+  A4, A12, A5, A13,   // CH
+  A0, A8, A1, A9      // ULD
 };
 
 float sensitivity[SENSOR_COUNT] = {
@@ -34,11 +35,21 @@ float currentSum[SENSOR_COUNT] = {0};
 unsigned long sampleCount = 0;
 
 float readVoltageOnce(int pin) {
-  analogRead(pin);          // 더미 읽기
-  delayMicroseconds(100);   // 안정화
 
-  int adc = analogRead(pin);
-  return adc * (ADC_REF / ADC_RESOLUTION);
+  const int SAMPLE_COUNT = 20;
+  long sum = 0;
+
+  analogRead(pin); 
+  delayMicroseconds(100);
+
+  for (int i = 0; i < SAMPLE_COUNT; i++) {
+    sum += analogRead(pin);
+    delayMicroseconds(100);
+  }
+
+  float avgAdc = (float)sum / SAMPLE_COUNT;
+
+  return avgAdc * (ADC_REF / ADC_RESOLUTION);
 }
 
 float calibrateZeroOffset(int pin) {
@@ -59,10 +70,6 @@ void accumulateSensorData() {
 
     float amps = (vout - zeroOffsetV[i]) / sensitivity[i];
 
-    if (abs(amps) < 0.03) {
-      amps = 0.0;
-    }
-
     voltageSum[i] += vout;
     currentSum[i] += amps;
   }
@@ -77,7 +84,17 @@ void sendAverageDataAndReset() {
   }
 
   for (int i = 0; i < SENSOR_COUNT; i++) {
+
+    // 평균 전류 계산
     float avgAmps = currentSum[i] / sampleCount;
+
+    // 음수 전류를 양수로 변환
+    avgAmps = abs(avgAmps);
+
+    // 0.1A 이하이면 0으로 처리
+    if (avgAmps <= 0.03) {
+      avgAmps = 0.0;
+    }
 
     Serial.print("S");
     Serial.print(i + 1);
@@ -112,7 +129,32 @@ void setup() {
   lastSampleTime = millis();
 }
 
+void resetZeroOffset() {
+
+  Serial.println("CAL_ZERO_START");
+
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+
+    zeroOffsetV[i] = calibrateZeroOffset(ACS_PINS[i]);
+
+  }
+
+  // 기존 누적 데이터 초기화
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+    voltageSum[i] = 0.0;
+    currentSum[i] = 0.0;
+  }
+
+  sampleCount = 0;
+
+  // 샘플링 시간 초기화
+  lastSampleTime = millis();
+
+  Serial.println("CAL_ZERO_DONE");
+}
+
 void loop() {
+
   unsigned long now = millis();
 
   if (now - lastSampleTime >= SAMPLE_INTERVAL_MS) {
@@ -121,11 +163,19 @@ void loop() {
   }
 
   if (Serial.available() > 0) {
+
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();
 
     if (cmd.equalsIgnoreCase("REQ_DATA")) {
+
       sendAverageDataAndReset();
+
+    }
+    else if (cmd.equalsIgnoreCase("CAL_ZERO")) {
+
+      resetZeroOffset();
+
     }
   }
 }
