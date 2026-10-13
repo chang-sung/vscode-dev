@@ -4,6 +4,7 @@ const CURRENT_CHANNELS = ['LD1_I', 'LD2_I', 'LD3_I', 'LD4_I',
 const CURRENT_COLUMNS = ['EQ_Name', 'WriteTime', ...CURRENT_CHANNELS];
 const CURRENT_PAGE_SIZE = 100;
 let currentRows = [];
+let currentTableRows = [];
 let currentPage = 0;
 let currentChart = null;
 let currentRequest = null;
@@ -26,23 +27,54 @@ function currentEscape(value) {
     }[c]));
 }
 
+// null/빈 값은 0으로 간주하지 않음
+function currentNumericValue(raw) {
+    if (raw == null || (typeof raw === 'string' && raw.trim() === '')) return NaN;
+    if (typeof raw !== 'number' && typeof raw !== 'string') return NaN;
+    return Number(raw);
+}
+
+function isAllCurrentZero(row) {
+    return CURRENT_CHANNELS.every(channel => currentNumericValue(row[channel]) === 0);
+}
+
+// 각 분의 00초~59초 데이터로 채널별 MAX 산출
+function aggregateCurrentMinuteMax(rows) {
+    const minutes = new Map();
+    rows.forEach(row => {
+        const timestamp = new Date(row.WriteTime).getTime();
+        if (!Number.isFinite(timestamp)) return;
+        const minute = Math.floor(timestamp / 60000) * 60000;
+        if (!minutes.has(minute)) minutes.set(minute, {});
+        const values = minutes.get(minute);
+        CURRENT_CHANNELS.forEach(channel => {
+            const value = currentNumericValue(row[channel]);
+            if (!Number.isFinite(value)) return;
+            if (values[channel] === undefined || value > values[channel]) values[channel] = value;
+        });
+    });
+    return [...minutes.entries()].sort((a, b) => a[0] - b[0])
+        .map(([time, values]) => ({ time, values }));
+}
+
 function renderCurrentRawTable() {
     const table = document.getElementById('acv-current-table');
     table.querySelector('thead').innerHTML = '<tr>' +
         CURRENT_COLUMNS.map(c => '<th>' + currentEscape(c) + '</th>').join('') + '</tr>';
     const start = currentPage * CURRENT_PAGE_SIZE;
-    table.querySelector('tbody').innerHTML = currentRows.slice(start, start + CURRENT_PAGE_SIZE).map(row =>
+    table.querySelector('tbody').innerHTML = currentTableRows.slice(start, start + CURRENT_PAGE_SIZE).map(row =>
         '<tr>' + CURRENT_COLUMNS.map(c => '<td>' + currentEscape(
             c === 'WriteTime' ? formatTimestamp(row[c]) : row[c]) + '</td>').join('') + '</tr>'
     ).join('');
-    document.getElementById('acv-current-page').textContent = currentRows.length
-        ? (currentPage + 1) + ' / ' + Math.ceil(currentRows.length / CURRENT_PAGE_SIZE) : '0 / 0';
+    document.getElementById('acv-current-page').textContent = currentTableRows.length
+        ? (currentPage + 1) + ' / ' + Math.ceil(currentTableRows.length / CURRENT_PAGE_SIZE) : '0 / 0';
     document.getElementById('acv-current-prev').disabled = currentPage === 0;
-    document.getElementById('acv-current-next').disabled = start + CURRENT_PAGE_SIZE >= currentRows.length;
+    document.getElementById('acv-current-next').disabled = start + CURRENT_PAGE_SIZE >= currentTableRows.length;
 }
 
 function clearCurrentView(message) {
     currentRows = [];
+    currentTableRows = [];
     currentPage = 0;
     currentChart?.dispose();
     currentChart = null;
@@ -52,11 +84,12 @@ function clearCurrentView(message) {
 }
 
 function renderCurrentScatter(eq) {
+    const minuteMax = aggregateCurrentMinuteMax(currentRows);
     clearAnalysisText('#acv-current-chart');
     currentChart?.dispose();
     currentChart = echarts.init(document.getElementById('acv-current-chart'));
     currentChart.setOption({
-        title: { text: eq + ' 파워몰러 전류', left: 'center' },
+        title: { text: eq + ' 파워몰러 전류 (1분 최대값)', left: 'center' },
         animation: false,
         legend: { type: 'scroll', top: 32, data: CURRENT_CHANNELS },
         tooltip: { trigger: 'item' },
@@ -69,11 +102,9 @@ function renderCurrentScatter(eq) {
             type: 'scatter',
             symbolSize: 4,
             progressive: 5000,
-            data: currentRows.flatMap(row => {
-                const time = new Date(row.WriteTime).getTime();
-                const raw = row[channel];
-                const value = raw == null || raw === '' ? NaN : Number(raw);
-                return Number.isFinite(time) && Number.isFinite(value) ? [[time, value]] : [];
+            data: minuteMax.flatMap(bucket => {
+                const value = bucket.values[channel];
+                return value === undefined ? [] : [[bucket.time, value]];
             })
         }))
     });
@@ -108,13 +139,14 @@ async function loadCurrentAnalysis() {
         if (currentRequest !== controller || !isCurrentMode()) return;
         if (!Array.isArray(rows)) throw new Error('전류 응답 형식이 올바르지 않습니다.');
         currentRows = rows;
+        currentTableRows = rows.filter(row => !isAllCurrentZero(row));
         currentPage = 0;
         if (!rows.length) {
             clearCurrentView('선택한 기간에 전류 데이터가 없습니다.');
             return;
         }
         document.getElementById('acv-current-status').textContent =
-            eq + ' | ' + start + ' ~ ' + end + ' | 총 ' + rows.length.toLocaleString() + '건';
+            eq + ' | ' + start + ' ~ ' + end + ' | 조회 ' + rows.length.toLocaleString() + '건 / 표 ' + currentTableRows.length.toLocaleString() + '건 (전체 0 제외)';
         renderCurrentScatter(eq);
         renderCurrentRawTable();
     } catch (error) {
@@ -132,11 +164,11 @@ async function loadCurrentAnalysis() {
 }
 
 function exportCurrentExcel() {
-    if (!currentRows.length) {
-        alert('저장할 전류 데이터가 없습니다. 설비와 날짜를 선택하세요.');
+    if (!currentTableRows.length) {
+        alert('저장할 전류 데이터가 없습니다. 전체 전류가 0인 행은 저장하지 않습니다.');
         return;
     }
-    const sheetRows = [CURRENT_COLUMNS, ...currentRows.map(row =>
+    const sheetRows = [CURRENT_COLUMNS, ...currentTableRows.map(row =>
         CURRENT_COLUMNS.map(c => c === 'WriteTime' ? formatTimestamp(row[c]) : (row[c] ?? null)))];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetRows), '파워몰러 전류');
@@ -149,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentPage > 0) { currentPage--; renderCurrentRawTable(); }
     });
     document.getElementById('acv-current-next').addEventListener('click', () => {
-        if ((currentPage + 1) * CURRENT_PAGE_SIZE < currentRows.length) {
+        if ((currentPage + 1) * CURRENT_PAGE_SIZE < currentTableRows.length) {
             currentPage++; renderCurrentRawTable();
         }
     });
