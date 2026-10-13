@@ -38,22 +38,22 @@ function isAllCurrentZero(row) {
     return CURRENT_CHANNELS.every(channel => currentNumericValue(row[channel]) === 0);
 }
 
-// 각 분의 00초~59초 데이터로 채널별 MAX 산출
-function aggregateCurrentMinuteMax(rows) {
-    const minutes = new Map();
+// 각 시간의 00분 00초~59분 59초 데이터로 채널별 MAX 산출
+function aggregateCurrentHourMax(rows) {
+    const hours = new Map();
     rows.forEach(row => {
         const timestamp = new Date(row.WriteTime).getTime();
         if (!Number.isFinite(timestamp)) return;
-        const minute = Math.floor(timestamp / 60000) * 60000;
-        if (!minutes.has(minute)) minutes.set(minute, {});
-        const values = minutes.get(minute);
+        const hour = Math.floor(timestamp / 3600000) * 3600000;
+        if (!hours.has(hour)) hours.set(hour, {});
+        const values = hours.get(hour);
         CURRENT_CHANNELS.forEach(channel => {
             const value = currentNumericValue(row[channel]);
             if (!Number.isFinite(value)) return;
             if (values[channel] === undefined || value > values[channel]) values[channel] = value;
         });
     });
-    return [...minutes.entries()].sort((a, b) => a[0] - b[0])
+    return [...hours.entries()].sort((a, b) => a[0] - b[0])
         .map(([time, values]) => ({ time, values }));
 }
 
@@ -84,12 +84,12 @@ function clearCurrentView(message) {
 }
 
 function renderCurrentScatter(eq) {
-    const minuteMax = aggregateCurrentMinuteMax(currentRows);
+    const hourMax = aggregateCurrentHourMax(currentRows);
     clearAnalysisText('#acv-current-chart');
     currentChart?.dispose();
     currentChart = echarts.init(document.getElementById('acv-current-chart'));
     currentChart.setOption({
-        title: { text: eq + ' 파워몰러 전류 (1분 최대값)', left: 'center' },
+        title: { text: eq + ' 파워몰러 전류 (1시간 최대값)', left: 'center' },
         animation: false,
         legend: { type: 'scroll', top: 32, data: CURRENT_CHANNELS },
         tooltip: { trigger: 'item' },
@@ -102,7 +102,7 @@ function renderCurrentScatter(eq) {
             type: 'scatter',
             symbolSize: 4,
             progressive: 5000,
-            data: minuteMax.flatMap(bucket => {
+            data: hourMax.flatMap(bucket => {
                 const value = bucket.values[channel];
                 return value === undefined ? [] : [[bucket.time, value]];
             })
