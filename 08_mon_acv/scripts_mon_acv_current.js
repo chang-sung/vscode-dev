@@ -38,22 +38,22 @@ function isAllCurrentZero(row) {
     return CURRENT_CHANNELS.every(channel => currentNumericValue(row[channel]) === 0);
 }
 
-// 각 시간의 00분 00초~59분 59초 데이터로 채널별 MAX 산출
-function aggregateCurrentHourMax(rows) {
-    const hours = new Map();
+// 정시 기준 5분 구간(00~04분, 05~09분 등)의 채널별 MAX 산출
+function aggregateCurrentFiveMinuteMax(rows) {
+    const intervals = new Map();
     rows.forEach(row => {
         const timestamp = new Date(row.WriteTime).getTime();
         if (!Number.isFinite(timestamp)) return;
-        const hour = Math.floor(timestamp / 3600000) * 3600000;
-        if (!hours.has(hour)) hours.set(hour, {});
-        const values = hours.get(hour);
+        const interval = Math.floor(timestamp / 300000) * 300000;
+        if (!intervals.has(interval)) intervals.set(interval, {});
+        const values = intervals.get(interval);
         CURRENT_CHANNELS.forEach(channel => {
             const value = currentNumericValue(row[channel]);
             if (!Number.isFinite(value)) return;
             if (values[channel] === undefined || value > values[channel]) values[channel] = value;
         });
     });
-    return [...hours.entries()].sort((a, b) => a[0] - b[0])
+    return [...intervals.entries()].sort((a, b) => a[0] - b[0])
         .map(([time, values]) => ({ time, values }));
 }
 
@@ -84,12 +84,12 @@ function clearCurrentView(message) {
 }
 
 function renderCurrentScatter(eq) {
-    const hourMax = aggregateCurrentHourMax(currentRows);
+    const fiveMinuteMax = aggregateCurrentFiveMinuteMax(currentRows);
     clearAnalysisText('#acv-current-chart');
     currentChart?.dispose();
     currentChart = echarts.init(document.getElementById('acv-current-chart'));
     currentChart.setOption({
-        title: { text: eq + ' 파워몰러 전류 (1시간 최대값)', left: 'center' },
+        title: { text: eq + ' 파워몰러 전류 (5분 최대값)', left: 'center' },
         animation: false,
         legend: { type: 'scroll', top: 32, data: CURRENT_CHANNELS },
         tooltip: { trigger: 'item' },
@@ -102,7 +102,7 @@ function renderCurrentScatter(eq) {
             type: 'scatter',
             symbolSize: 4,
             progressive: 5000,
-            data: hourMax.flatMap(bucket => {
+            data: fiveMinuteMax.flatMap(bucket => {
                 const value = bucket.values[channel];
                 return value === undefined ? [] : [[bucket.time, value]];
             })
@@ -114,7 +114,13 @@ async function loadCurrentAnalysis() {
     if (!isCurrentMode()) return;
     cancelCurrentRequest();
     const eq = document.getElementById('eq-group-select')?.value || 'all';
-    const [start, end] = getSelectedRangeYmd();
+    let [start, end] = getSelectedRangeYmd();
+    // 날짜가 없으면 브라우저의 현지 날짜(오늘)로 설정
+    if (!start || !end) {
+        const today = formatYmd(new Date());
+        setDateRangeToDay(today);
+        start = end = today;
+    }
     if (eq === 'all') {
         clearCurrentView('설비를 선택하세요.');
         return;
