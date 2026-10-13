@@ -332,6 +332,7 @@ function renderTrendChartFilters() {
     const recipeSel = document.getElementById('recipe-select');
 
     const safeRenderOrHide = () => {
+        if (isDateRangeSelectionPending()) return;
         const eq = eqSel?.value || 'all';
         const recipe = recipeSel?.value || 'all';
         if (eq === 'all' || recipe === 'all') {
