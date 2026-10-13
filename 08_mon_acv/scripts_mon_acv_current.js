@@ -94,7 +94,20 @@ function renderCurrentScatter(eq) {
         legend: { type: 'scroll', top: 32, data: CURRENT_CHANNELS },
         tooltip: { trigger: 'item' },
         grid: { top: 85, bottom: 65, left: 65, right: 30 },
-        xAxis: { type: 'time', name: '시간' },
+        xAxis: {
+            type: 'time',
+            name: '시간',
+            axisLabel: {
+                formatter: value => {
+                    const date = new Date(value);
+                    if (!Number.isFinite(date.getTime())) return '';
+                    const pad = number => String(number).padStart(2, '0');
+                    return pad(date.getMonth() + 1) + '/' + pad(date.getDate()) +
+                        ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+                },
+                hideOverlap: true
+            }
+        },
         yAxis: { type: 'value', name: '전류 (A)', scale: true },
         dataZoom: [{ type: 'inside' }, { type: 'slider', bottom: 10 }],
         series: CURRENT_CHANNELS.map(channel => ({
