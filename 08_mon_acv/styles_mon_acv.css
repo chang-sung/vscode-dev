@@ -661,3 +661,33 @@ table.dataTable thead td {
     width: 8px;
     height: 8px;
 }
+
+/* 파워몰러: 위쪽 Scatter / 아래쪽 Raw 데이터 */
+#acv-current-container {
+    width: 1660px;
+    height: 650px;
+    display: grid;
+    grid-template-rows: minmax(0, 370px) minmax(0, 1fr);
+    gap: 12px;
+}
+.acv-current-chart-panel, .acv-current-raw-panel {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    min-height: 0;
+    min-width: 0;
+}
+#acv-current-chart { width: 100%; height: 100%; position: relative; }
+.acv-current-raw-panel { display: flex; flex-direction: column; }
+.acv-current-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    flex-shrink: 0;
+}
+#acv-current-status { flex: 1; color: #666; font-size: 12px; }
+.acv-current-table-scroll { overflow: auto; flex: 1; min-height: 0; }
+#acv-current-table { border-collapse: collapse; width: 100%; font-size: 12px; white-space: nowrap; }
+#acv-current-table th, #acv-current-table td { padding: 5px 8px; border: 1px solid #ccc; text-align: center; }
+#acv-current-table th { position: sticky; top: 0; background: #f0f0f0; z-index: 1; }
