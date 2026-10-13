@@ -64,7 +64,6 @@ function renderMonTable(data) {
         <th data-sort="text">Recipe</th>
         <th data-sort="text">Status</th>
         <th data-sort="num">미세 가압 Count</th>
-        <th data-sort="num">미세 가압 Interval</th>
         <th data-sort="num">미세 가압 Time</th>
         <th data-sort="num">가압 시간</th>
         <th data-sort="num">배기 시간</th>
@@ -86,7 +85,6 @@ function renderMonTable(data) {
             <td>${row.recipe ?? '-'}</td>
             <td></td>
             <td>${row.max_micro_press_cnt ?? '-'}</td>
-            <td>${row.min_leak_interval ?? '-'}</td>
             <td>${row.max_micro_press_time ?? '-'}</td>
             <td>${row.max_press_time ?? '-'}</td>
             <td>${row.max_exhaust_time ?? '-'}</td>
@@ -113,7 +111,7 @@ function renderMonTable(data) {
             { targets: 0, type: 'eq', width: '100px' },
             { targets: 1, width: '150px' },
             { targets: 2, width: '100px' },
-            { targets: [3,4,5,6,7,8,9], type: 'num', width: '130px' }
+            { targets: [3,4,5,6,7,8], type: 'num', width: '130px' }
         ],
         language: { emptyTable: '데이터가 없습니다.' }
     });
@@ -158,8 +156,14 @@ function openSummaryPopup() {
         </div>
     `;
 
-    fetch('/get-acv-summary')
-        .then(res => res.json())
+    showLoading();
+
+    return Promise.resolve()
+        .then(() => fetch('/get-acv-summary'))
+        .then(res => {
+            if (!res.ok) throw new Error(`ACV summary 조회 실패 (HTTP ${res.status})`);
+            return res.json();
+        })
         .then(data => {
         __monRawData = Array.isArray(data) ? data : [];
 
@@ -203,6 +207,9 @@ function openSummaryPopup() {
 
             __monFilterHandlersBound = true;
         }
+        })
+        .finally(() => {
+            hideLoading();
         })
         .catch(err => {
             console.error('❌ 미세가압 Summary 불러오기 실패:', err);
