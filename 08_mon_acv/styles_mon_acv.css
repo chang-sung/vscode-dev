@@ -1,0 +1,649 @@
+html, body {
+    font-family: 'Segoe UI', 'Pretendard', sans-serif;
+    overflow: hidden;  /* ✅ 전체 페이지에서 스크롤 제거 */
+    margin: 0;
+    padding: 0;
+}
+
+.button_group {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+    margin-left: 5px;
+}
+
+.main-wrapper {
+    margin-left: -100px;
+
+}
+
+/* ---------------------------- 관리자 모드 ip 영역 ---------------------------- */
+
+#user-name-display {
+  position: absolute;
+  top: 50px;
+  right: 45px;
+}
+
+/* ========================== 버튼 스타일 */
+
+.menu-container {
+    display: flex;
+    width: 1660px;
+    margin-left: -100px;
+    margin-top: -30px;
+    margin-bottom: 5px;
+}
+
+.menu-container button {
+    padding: 8px 20px;
+    height: 35px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+}
+  
+.group1-container h3,
+.group2-container h3,
+.group3-container h3,
+.group4-container h3 {
+    margin: 2px 0 2px 3px;  /* 위쪽 마진 제거 */
+    font-size: 18px;
+    color: #555;
+    border-left: 4px solid #007bff;
+    padding-left: 5px;
+    margin-bottom: 8px;
+}
+  
+.group1-container {
+    display: flex;
+    flex-direction: column; /* ✅ 수직 정렬로 변경 */
+    width: 450px;             /* 필요 시 줄바꿈 유도 */
+    height: 115px;
+    gap: 1px;
+    padding-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.group2-container {
+    display: flex;
+    flex-direction: column; /* h3는 위에, 아래는 두 그룹이 좌우로 */
+    width: 400px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* ✅ h3 아래 두 그룹을 좌우 정렬 */
+.group2-inner-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+}
+  
+.group3-container {
+    display: flex;
+    position: relative; /* 버튼 절대 위치 기준이 됨 */
+    flex-direction: column; /* h3는 위에, 아래는 두 그룹이 좌우로 */
+    width: 398px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* ✅ h3 아래 두 그룹을 좌우 정렬 */
+.group3-inner-wrapper {
+    display: flex;
+    flex-direction: row;      /* 좌우 배치 */
+    align-items: flex-start;
+    gap: 5px;
+}
+  
+.group4-container {
+    display: flex;
+    position: relative;  /* ✅ 요거 추가하면 됩니다! */
+    flex-direction: column; /* ✅ 수직 정렬로 변경 */
+    width: 385px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* ========================== 설비 그룹 박스*/
+.group2-inner-1{
+    margin-left: 5px;
+}
+
+.group2-inner-2{
+    margin-left: 5px;
+    margin-top: 5px;
+}
+
+#shift-select {
+    width: 107px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+#eq-group-select {
+    width: 110px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+}
+
+#recipe-select {
+    width: 130px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+    margin-left: 4px;
+}
+
+#date-range-select {
+    display: flex;
+    flex-direction: row;     /* 👉 인풋과 버튼 가로 배치 */
+    align-items: center;
+    gap: 8px;                /* 👉 인풋과 버튼 사이 간격 */
+}
+
+#date-range {
+    width: 200px;            /* 날짜 인풋 너비 */
+    height: 20px;            /* 높이 */
+    font-size: 14px;
+    padding: 5px 10px;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+}
+
+#date-init-btn {
+    height: 32px;
+    padding: 5px 15px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#date-init-btn:hover {
+    background-color: #0056b3;
+}
+
+/* ========================== 사이클 분석 Wrapper*/
+
+.acv-main-wrapper {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    border: 1px solid black;
+    margin-left: -100px;
+}
+
+#acv-top-container .top-item {
+    display: flex;
+    align-items: center;
+}
+
+.acv-body-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;     /* ✅ 가운데 정렬 */
+    width: 1660px;
+    height: 605px;
+    gap: 20px;
+
+}
+
+.acv-main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.acv-chart-container {
+    width: 1100px;
+    height: 550px; /* 또는 적당한 높이 */
+    min-height: 400px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.acv-info-table-container {
+    display: flex;               /* ✅ 가로 정렬을 위해 추가 */
+    flex-direction: row;         /* ✅ (기본값이라 생략 가능) */
+    gap: 20px;                   /* ✅ 테이블 사이 간격 */
+    width: auto;                 /* 필요시 조정 */
+    height: auto;                /* 필요시 조정 */
+
+    overflow-x: auto;            /* ✅ 가로 넘칠 경우 스크롤 */
+    margin-top: 50px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#acv-lot-info-table,
+#acv-cycle-info-table {
+    width: 250px;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#acv-lot-info-table th,
+#acv-lot-info-table td,
+#acv-cycle-info-table th,
+#acv-cycle-info-table td {
+    padding: 8px;
+    border: 1px solid #ccc;
+    text-align: left;
+}
+
+#acv-chart-container,
+#effi-middle-container {
+    position: relative;
+}
+
+.analysis-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    color: #666;
+    text-align: center;
+    z-index: 100;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 12px 20px;
+    border-radius: 8px;
+    pointer-events: none;
+    white-space: pre-wrap;
+}
+
+.cycle-control-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;         /* 버튼과 드롭다운 사이 간격 */
+    margin-top: 9px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;   /* 줄바꿈 허용 (화면 작을 때 대응) */
+}
+
+#cycle-counter {
+    min-width: 70px;  /* 필요 시 크기 고정 */
+    text-align: center;
+}
+
+.cycle-nav-btn {
+    width: 100px;
+    height: 30px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 2px;
+    margin: 0 10px;
+    font-size: 13px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.cycle-nav-btn:hover {
+    background-color: #0056b3;
+}
+
+.cycle-nav-btn:active {
+    transform: scale(0.96);
+}
+
+#cycle-selector {
+    margin-left: 10px;
+    padding: 5px;
+    width: 150px;
+    height: 30px;
+    border-radius: 5px;
+}
+
+
+/* ========================== 설비 효율 */
+
+.acv-effi-wrapper {
+    display: flex;
+    justify-content: center; /* ✅ 가운데 정렬 */
+    align-items: flex-start;
+    gap: 20px;
+}
+
+#acv-efficiency-container {
+    display: flex;
+    width: 1660px;
+    gap: 20px;
+    justify-content: space-between;
+    overflow-y: auto;
+}
+
+#effi-left-container,
+#effi-middle-container,
+#effi-right-container {
+    flex: 1;
+    min-width: 0;
+    height: 650px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.effi-weekly-chart {
+    width: 100%;
+    height: 320px;
+    margin-top: 20px;
+}
+
+.effi-daily-chart{
+    width: 100%;
+    height: 320px;
+    margin-top: 20px;
+}
+
+.effi-eqp-chart {
+    width: 100%;
+    height: 670px;
+    margin-top: 20px;
+}
+
+.effi-detail-table {
+    max-height: 350px;       /* 원하는 높이 제한 */
+    overflow-y: auto;        /* 세로 스크롤 활성화 */
+    overflow-x: auto;        /* 가로도 필요 시 */
+}
+
+.effi-detail-table table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc; /* ✅ 테이블 전체 테두리 */
+}
+
+.effi-detail-table th,
+.effi-detail-table td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+}
+
+/* ===================== 모니터링 컨테이너 ===================== */
+
+#acv-mon-chart,
+#acv-mon-table{
+  width: 100%;
+
+}
+#acv-mon-container {
+  width: 1660px;
+  height: 645px;
+}
+
+/*  테이블 너비 강제 고정 */
+table.dataTable,
+#mon-inline-table {
+  border-collapse: collapse;
+  width: 1645px !important;
+  
+}
+
+/* DataTables 스크롤 본문 */
+.dataTables_scrollBody {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  
+}
+
+/* 헤더 스타일 */
+table.dataTable thead th,
+table.dataTable thead td {
+  border: 1px solid #000 !important;  
+  box-sizing: border-box !important;
+  background-color: #f0f0f0 !important;
+  font-weight: bold;
+  text-align: center;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 2;
+}
+
+/* 본문 셀  */
+#mon-inline-table th,
+#mon-inline-table td {
+  border: 1px solid #000;
+  padding: 4px 8px;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*  줄무늬 + 호버 강조  */
+#mon-inline-table tbody tr:hover {
+  background: #f0f8ff; /* 연한 파랑 */
+}
+
+#mon-inline-table tbody tr.selected {
+  background-color: #cce5ff; /* 진한 파랑 강조 */
+}
+
+
+/* 인라인용 엑셀 버튼 */
+#export-mon-excel-btn {
+  height: 32px;
+  width: 90px;
+  padding: 5px 15px;
+  font-size: 14px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#export-mon-excel-btn:hover {
+  background-color: #218838;
+}
+
+
+/* =============================== ACV Breakdown (고장 차트) =============================== */
+
+/* 차트 영역 */
+#acv-breakdown-container {
+    width: 1645px;
+    height: 500px; /* 기본 높이 */
+    min-height: 400px;
+    margin-top: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+/* 안내 메시지 (설비 선택/데이터 없음) */
+#acv-breakdown-container .analysis-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #777;
+    font-size: 1rem;
+    text-align: center;
+}
+
+
+/* ========================== 팝업 ========================== */
+
+
+.effi-popup-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.effi-popup-content {
+    background: white;
+    top: -100px;
+    padding: 20px;
+    border-radius: 8px;
+    max-height: 80%;
+    overflow-y: auto;
+    width: 800px;
+    position: relative;
+}
+
+.effi-popup-close {
+    position: absolute;
+    top: 10px; right: 15px;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* 제목 중앙 정렬 */
+.popup-title {
+    text-align: center;
+    margin: 10px 0 5px 0;
+    font-size: 20px;
+}
+
+/* 엑셀 버튼 오른쪽 정렬 */
+.excel-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+/* ✅ 테이블 스크롤 영역 (헤더 고정 처리용 wrapper) */
+.popup-table-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 테이블 스타일 수정 */
+.effi-popup-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    table-layout: fixed;     /* ✅ 열 폭 고정 */
+}
+
+/* ✅ 고정 헤더 */
+.effi-popup-content thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f0f0f0;
+    z-index: 2;
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* 테이블 본문 */
+.effi-popup-content tbody td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+    background-color: white;
+}
+
+/* 엑셀 저장 버튼 스타일 */
+#export-excel-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#export-excel-btn:hover {
+    background-color: #218838;
+}
+
+
+/* 아이콘 삽입 */
+.effi-popup-content thead th::after {
+    content: "";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    background-image: url('../css/caret-dropdown.svg'); /* ✔️ 실제 경로로 수정 */
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+}
+
+/* 현재 정렬 중인 열 강조 */
+.effi-popup-content thead th.sort-active::after {
+    opacity: 1;
+}
+
+/* 엑셀 저장 버튼 스타일 */
+#export-mon-excel-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#export-mon-excel-btn:hover {
+    background-color: #218838;
+}
+
+.summary-container {
+    display: flex;
+    flex-direction: row; /* 세로로 정렬하려면 */
+    gap: 10px;
+    margin-top: 5px;
+}
