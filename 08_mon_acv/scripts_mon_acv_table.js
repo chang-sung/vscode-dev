@@ -222,6 +222,13 @@ function setupMonExcelExport() {
 
 // ===== 엑셀 저장 핸들러 =====
 function handleMonExcelExport() {
+    // 설비 효율 탭에서는 현재 상세 표를 저장
+    const efficiencyWrapper = document.querySelector('.acv-effi-wrapper');
+    if (efficiencyWrapper && efficiencyWrapper.style.display !== 'none') {
+        exportEfficiencyDetailExcel();
+        return;
+    }
+
     // 1) 테이블 존재 확인
     const table = document.getElementById('mon-inline-table');
     if (!table) {

@@ -9,7 +9,6 @@ function resetEfficiencyDetailTable() {
     table.querySelector("thead").innerHTML = "";
     table.querySelector("tbody").innerHTML = "";
     document.getElementById("effi-detail-message").textContent = "바차트를 클릭하면 상세 정보가 표시됩니다.";
-    document.getElementById("export-excel-btn").disabled = true;
 }
 
 function showEfficiencyDetailTable(data) {
@@ -17,10 +16,8 @@ function showEfficiencyDetailTable(data) {
     const thead = document.querySelector("#effi-detail-data-table thead");
 
     const message = document.getElementById("effi-detail-message");
-    const exportButton = document.getElementById("export-excel-btn");
     const rowsData = Array.isArray(data) ? data : [];
     message.textContent = rowsData.length ? `상세 정보 ${rowsData.length}건` : "데이터가 없습니다.";
-    exportButton.disabled = rowsData.length === 0;
 
     // ✅ 헤더 동적 구성
     thead.innerHTML = `
@@ -93,8 +90,12 @@ function sortTableByColumn(table, columnIndex, ascending) {
     tBody.append(...sortedRows);
 }
 
-document.getElementById("export-excel-btn").addEventListener("click", () => {
+function exportEfficiencyDetailExcel() {
     const table = document.getElementById("effi-detail-data-table");
+    if (!table || !table.tBodies[0] || table.tBodies[0].rows.length === 0) {
+        alert("저장할 상세 정보가 없습니다. 바차트를 클릭해 상세 정보를 먼저 표시하세요.");
+        return;
+    }
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.table_to_sheet(table);
     XLSX.utils.book_append_sheet(wb, ws, "상세정보");
@@ -103,4 +104,4 @@ document.getElementById("export-excel-btn").addEventListener("click", () => {
     const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
 
     XLSX.writeFile(wb, `ACV_상세정보_${timestamp}.xlsx`);
-});
+}
