@@ -25,26 +25,26 @@ function showEfficiencyDetailTable(data) {
     // ✅ 헤더 동적 구성
     thead.innerHTML = `
         <tr>
-            <th>설비</th>
-            <th>시간</th>
-            <th>CV1</th>
-            <th>CV2</th>
-            <th>CV3</th>
-            <th>CV4</th>
-            <th>효율</th>
+            <th class="effi-col-eq">설비</th>
+            <th class="effi-col-time">시간</th>
+            <th class="effi-col-effi">효율</th>
+            <th class="effi-col-cv">CV1</th>
+            <th class="effi-col-cv">CV2</th>
+            <th class="effi-col-cv">CV3</th>
+            <th class="effi-col-cv">CV4</th>
         </tr>
     `;
 
     // 클릭한 막대에 해당하는 전체 데이터 출력
     const rows = rowsData.map(row => `
         <tr>
-            <td>${escapeEfficiencyCell(row.eq ?? '-')}</td>
-            <td>${escapeEfficiencyCell(formatDateTime(row.writeTime))}</td>
-            <td>${escapeEfficiencyCell(row.cv1 ?? '-')}</td>
-            <td>${escapeEfficiencyCell(row.cv2 ?? '-')}</td>
-            <td>${escapeEfficiencyCell(row.cv3 ?? '-')}</td>
-            <td>${escapeEfficiencyCell(row.cv4 ?? '-')}</td>
-            <td>${escapeEfficiencyCell(row.effi ?? '-')}</td>
+            <td class="effi-col-eq">${escapeEfficiencyCell(row.eq ?? '-')}</td>
+            <td class="effi-col-time">${escapeEfficiencyCell(formatDateTime(row.writeTime))}</td>
+            <td class="effi-col-effi">${escapeEfficiencyCell(row.effi ?? '-')}</td>
+            <td class="effi-col-cv">${escapeEfficiencyCell(row.cv1 ?? '-')}</td>
+            <td class="effi-col-cv">${escapeEfficiencyCell(row.cv2 ?? '-')}</td>
+            <td class="effi-col-cv">${escapeEfficiencyCell(row.cv3 ?? '-')}</td>
+            <td class="effi-col-cv">${escapeEfficiencyCell(row.cv4 ?? '-')}</td>
         </tr>
     `).join('');
 
