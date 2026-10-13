@@ -1,9 +1,26 @@
-function showPopupTable(data) {
-    const popup = document.getElementById("effi-popup");
-    const tbody = document.querySelector("#effi-popup-table tbody");
-    const thead = document.querySelector("#effi-popup-table thead");
+function escapeEfficiencyCell(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+}
 
-    popup.style.display = "flex";
+function resetEfficiencyDetailTable() {
+    const table = document.getElementById("effi-detail-data-table");
+    table.querySelector("thead").innerHTML = "";
+    table.querySelector("tbody").innerHTML = "";
+    document.getElementById("effi-detail-message").textContent = "바차트를 클릭하면 상세 정보가 표시됩니다.";
+    document.getElementById("export-excel-btn").disabled = true;
+}
+
+function showEfficiencyDetailTable(data) {
+    const tbody = document.querySelector("#effi-detail-data-table tbody");
+    const thead = document.querySelector("#effi-detail-data-table thead");
+
+    const message = document.getElementById("effi-detail-message");
+    const exportButton = document.getElementById("export-excel-btn");
+    const rowsData = Array.isArray(data) ? data : [];
+    message.textContent = rowsData.length ? `상세 정보 ${rowsData.length}건` : "데이터가 없습니다.";
+    exportButton.disabled = rowsData.length === 0;
 
     // ✅ 헤더 동적 구성
     thead.innerHTML = `
@@ -18,16 +35,16 @@ function showPopupTable(data) {
         </tr>
     `;
 
-    // ✅ 최신 100개만 출력
-    const rows = data.map(row => `
+    // 클릭한 막대에 해당하는 전체 데이터 출력
+    const rows = rowsData.map(row => `
         <tr>
-            <td>${row.eq}</td>
-            <td>${formatDateTime(row.writeTime)}</td>
-            <td>${row.cv1 ?? '-'}</td>
-            <td>${row.cv2 ?? '-'}</td>
-            <td>${row.cv3 ?? '-'}</td>
-            <td>${row.cv4 ?? '-'}</td>
-            <td>${row.effi ?? '-'}</td>
+            <td>${escapeEfficiencyCell(row.eq ?? '-')}</td>
+            <td>${escapeEfficiencyCell(formatDateTime(row.writeTime))}</td>
+            <td>${escapeEfficiencyCell(row.cv1 ?? '-')}</td>
+            <td>${escapeEfficiencyCell(row.cv2 ?? '-')}</td>
+            <td>${escapeEfficiencyCell(row.cv3 ?? '-')}</td>
+            <td>${escapeEfficiencyCell(row.cv4 ?? '-')}</td>
+            <td>${escapeEfficiencyCell(row.effi ?? '-')}</td>
         </tr>
     `).join('');
 
@@ -37,7 +54,7 @@ function showPopupTable(data) {
     thead.querySelectorAll("th").forEach((th, index) => {
         let ascending = true;
         th.addEventListener("click", () => {
-            const table = document.getElementById("effi-popup-table");
+            const table = document.getElementById("effi-detail-data-table");
             sortTableByColumn(table, index, ascending);
 
             // 기존 정렬 상태 제거
@@ -48,9 +65,7 @@ function showPopupTable(data) {
         });
     });
 
-    document.querySelector(".effi-popup-close").onclick = () => {
-        popup.style.display = "none";
-    };
+    document.querySelector("#effi-detail-table .effi-detail-scroll").scrollTop = 0;
 }
 
 function sortTableByColumn(table, columnIndex, ascending) {
@@ -79,7 +94,7 @@ function sortTableByColumn(table, columnIndex, ascending) {
 }
 
 document.getElementById("export-excel-btn").addEventListener("click", () => {
-    const table = document.getElementById("effi-popup-table");
+    const table = document.getElementById("effi-detail-data-table");
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.table_to_sheet(table);
     XLSX.utils.book_append_sheet(wb, ws, "상세정보");
