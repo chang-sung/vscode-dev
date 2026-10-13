@@ -632,18 +632,20 @@ table.dataTable thead td {
     padding: 6px 4px;
 }
 
-#effi-detail-data-table .effi-col-eq { width: 70px; }
-#effi-detail-data-table .effi-col-time { width: 110px; }
-#effi-detail-data-table .effi-col-effi { width: 56px; }
-#effi-detail-data-table .effi-col-cv { width: 56px; }
+#effi-detail-data-table .effi-col-eq { width: 50px; }
+#effi-detail-data-table .effi-col-time { width: 70px; }
+#effi-detail-data-table .effi-col-effi { width: 50px; }
+#effi-detail-data-table .effi-col-cv { width: 65px; }
 
 #effi-detail-data-table td.effi-col-time,
+#effi-detail-data-table td.effi-col-eq,
 #effi-detail-data-table td.effi-col-cv {
     font-size: 11px;
     line-height: 1.35;
 }
 
 #effi-detail-data-table td.effi-col-cv,
+#effi-detail-data-table td.effi-col-eq,
 #effi-detail-data-table td.effi-col-eq {
     white-space: normal;
     overflow-wrap: anywhere;
