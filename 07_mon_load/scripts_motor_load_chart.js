@@ -7,6 +7,7 @@
 ========================= */
 
 let chartInstances = [];
+const chartRenderVersions = new WeakMap();
 
 const DEFAULT_DAYS_RANGE = 30;
 
@@ -130,6 +131,9 @@ function removeCharts(targetContainer = null) {
     const $container = targetContainer || monitoringChartsContainer || null;
     if (!$container?.length) return;
 
+    // 차트 제거/선택 변경 시 진행 중인 이전 조회도 무효화한다.
+    const containerEl = $container[0];
+    chartRenderVersions.set(containerEl, (chartRenderVersions.get(containerEl) || 0) + 1);
     disposeChartsByContainer($container);
     $container.empty();
     $container.removeClass('with-border');
@@ -243,9 +247,14 @@ async function createMotorCharts(
     }
 
     removeCharts($container);
+    const containerEl = $container[0];
+    const renderVersion = chartRenderVersions.get(containerEl);
+    const isCurrentRender = () => chartRenderVersions.get(containerEl) === renderVersion;
     await loadIdleThresholdMap();
+    if (!isCurrentRender()) return;
 
-    const groups = axisType === 'Ball Screw' ? ballScrewGroups : autoStageGroups;
+    const sourceGroups = axisType === 'Ball Screw' ? ballScrewGroups : autoStageGroups;
+    const groups = sourceGroups.map(group => ({ ...group, data: [] }));
     const queryParams = buildQueryParams(eqp, startDate, endDate);
 
     console.log('[createMotorCharts] queryParams', queryParams);
@@ -266,6 +275,7 @@ async function createMotorCharts(
     showLoading();
 
     $.get('/get-ph2-motor-pick-load-data', queryParams, function (rawData) {
+        if (!isCurrentRender()) return;
         try {
             if (!Array.isArray(rawData) || rawData.length === 0) {
                 $container.empty().addClass('with-border');
@@ -395,9 +405,10 @@ async function createMotorCharts(
             $container.empty().addClass('with-border');
             safeShowAnalysisText('데이터를 그리는 중 오류가 발생했습니다.', targetSel);
         } finally {
-            hideLoading();
+            if (isCurrentRender()) hideLoading();
         }
     }).fail((jqXHR, textStatus, errorThrown) => {
+        if (!isCurrentRender()) return;
         console.error('Failed to load motor chart data:', eqp, textStatus, errorThrown);
 
         $container.empty().addClass('with-border');
