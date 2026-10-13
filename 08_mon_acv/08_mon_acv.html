@@ -138,7 +138,19 @@
                         <div id="effi-eqp-chart" class="effi-eqp-chart"></div>
                     </div>
                     <div id="effi-right-container">
-                        <div id="effi-detail-table" class="effi-detail-table"></div>   
+                        <div id="effi-detail-table" class="effi-detail-content">
+                            <h3 class="popup-title">상세 정보</h3>
+                            <p id="effi-detail-message" class="effi-detail-message">바차트를 클릭하면 상세 정보가 표시됩니다.</p>
+                            <div class="excel-btn-wrapper">
+                                <button id="export-excel-btn" disabled>엑셀 저장</button>
+                            </div>
+                            <div class="effi-detail-scroll">
+                                <table id="effi-detail-data-table" class="efficiency-table">
+                                    <thead></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>   
                     </div>
                 </div>
             </div>
@@ -159,27 +171,6 @@
             </div>
 
         </div>  
-    </div>
-
-    <!-- ⬇️ 바깥에 공통 팝업 HTML 추가 -->
-    <div id="effi-popup" class="effi-popup-overlay" style="display: none;">
-        <div class="effi-popup-content">
-            <span class="effi-popup-close">&times;</span>
-
-            <!-- 상단 고정 영역 -->
-            <h3 class="popup-title">상세 정보</h3>
-            <div class="excel-btn-wrapper">
-                <button id="export-excel-btn">엑셀 저장</button>
-            </div>
-
-            <!-- ✅ 테이블 스크롤 영역 -->
-            <div class="popup-table-scroll">
-                <table id="effi-popup-table" class="efficiency-table">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <script>

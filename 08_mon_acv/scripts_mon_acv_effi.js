@@ -4,6 +4,7 @@ let eqpChart = null;
 
 // ✅ 효율 분석 전체 로딩
 function loadEfficiencyAnalysis(selectedEq = "all") {
+    resetEfficiencyDetailTable();
     showLoading();  // ✅ 로딩 시작
 
     const weeklyChartEl = document.getElementById("effi-weekly-chart");
@@ -93,11 +94,11 @@ function renderWeeklyEfficiencyChart(data, chartEl) {
         }]
     });
 
-    // ✅ 팝업 연결
+    // ✅ 오른쪽 상세 표 연결
     weeklyChart.on('click', function (params) {
         const selectedWeek = params.name;
         const filtered = data.filter(row => row.Week === selectedWeek);
-        showPopupTable(filtered);
+        showEfficiencyDetailTable(filtered);
     });
 
     setTimeout(() => weeklyChart.resize(), 100);
@@ -142,7 +143,7 @@ function renderDailyEfficiencyChart(data, chartEl) {
     dailyChart.on('click', function (params) {
         const selectedDate = params.name;
         const filtered = data.filter(row => formatDateOnly(row.writeTime) === selectedDate);
-        showPopupTable(filtered);
+        showEfficiencyDetailTable(filtered);
     });
 
     setTimeout(() => dailyChart.resize(), 100);
@@ -297,11 +298,11 @@ async function renderEqpEfficiencyChart(data, chartEl) {
         ]
     });
 
-    // 팝업용 클릭
+    // 오른쪽 상세 표 클릭 연결
     eqpChart.on('click', function (params) {
         const selectedEq = params.data.name;
         const filtered = filteredData.filter(row => row.eq === selectedEq);
-        showPopupTable(filtered);
+        showEfficiencyDetailTable(filtered);
     });
 
     setTimeout(() => eqpChart.resize(), 100);

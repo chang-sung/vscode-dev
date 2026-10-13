@@ -383,27 +383,6 @@ html, body {
     margin-top: 20px;
 }
 
-.effi-detail-table {
-    max-height: 350px;       /* 원하는 높이 제한 */
-    overflow-y: auto;        /* 세로 스크롤 활성화 */
-    overflow-x: auto;        /* 가로도 필요 시 */
-}
-
-.effi-detail-table table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
-    font-size: 14px;
-    border: 1px solid #ccc; /* ✅ 테이블 전체 테두리 */
-}
-
-.effi-detail-table th,
-.effi-detail-table td {
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    text-align: center;
-}
-
 /* ===================== 모니터링 컨테이너 ===================== */
 
 #acv-mon-chart,
@@ -513,33 +492,19 @@ table.dataTable thead td {
 /* ========================== 팝업 ========================== */
 
 
-.effi-popup-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+.effi-detail-content {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    height: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
-.effi-popup-content {
-    background: white;
-    top: -100px;
-    padding: 20px;
-    border-radius: 8px;
-    max-height: 80%;
-    overflow-y: auto;
-    width: 800px;
-    position: relative;
-}
-
-.effi-popup-close {
-    position: absolute;
-    top: 10px; right: 15px;
-    cursor: pointer;
-    font-size: 20px;
+.effi-detail-message {
+    margin: 8px 0;
+    color: #666;
+    text-align: center;
 }
 
 /* 제목 중앙 정렬 */
@@ -557,21 +522,23 @@ table.dataTable thead td {
 }
 
 /* ✅ 테이블 스크롤 영역 (헤더 고정 처리용 wrapper) */
-.popup-table-scroll {
-    max-height: 400px;
-    overflow-y: auto;
+.effi-detail-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 
 /* 테이블 스타일 수정 */
-.effi-popup-content table {
+.effi-detail-content table {
     border-collapse: collapse;
     width: 100%;
     font-size: 14px;
-    table-layout: fixed;     /* ✅ 열 폭 고정 */
+    min-width: 620px;
+    white-space: nowrap;
 }
 
 /* ✅ 고정 헤더 */
-.effi-popup-content thead th {
+.effi-detail-content thead th {
     position: sticky;
     top: 0;
     background-color: #f0f0f0;
@@ -583,7 +550,7 @@ table.dataTable thead td {
 }
 
 /* 테이블 본문 */
-.effi-popup-content tbody td {
+.effi-detail-content tbody td {
     border: 1px solid #ccc;
     padding: 6px 10px;
     text-align: center;
@@ -607,7 +574,7 @@ table.dataTable thead td {
 
 
 /* 아이콘 삽입 */
-.effi-popup-content thead th::after {
+.effi-detail-content thead th::after {
     content: "";
     position: absolute;
     right: 8px;
@@ -622,7 +589,7 @@ table.dataTable thead td {
 }
 
 /* 현재 정렬 중인 열 강조 */
-.effi-popup-content thead th.sort-active::after {
+.effi-detail-content thead th.sort-active::after {
     opacity: 1;
 }
 
@@ -646,4 +613,13 @@ table.dataTable thead td {
     flex-direction: row; /* 세로로 정렬하려면 */
     gap: 10px;
     margin-top: 5px;
+}
+
+#export-excel-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.effi-detail-content thead th {
+    cursor: pointer;
 }
