@@ -124,7 +124,7 @@ function renderCurrentScatter(eq) {
 }
 
 async function loadCurrentAnalysis() {
-    if (!isCurrentMode()) return;
+    if (!isCurrentMode() || isDateRangeSelectionPending()) return;
     cancelCurrentRequest();
     const eq = document.getElementById('eq-group-select')?.value || 'all';
     let [start, end] = getSelectedRangeYmd();
