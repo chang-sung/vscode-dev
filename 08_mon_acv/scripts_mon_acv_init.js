@@ -366,6 +366,10 @@ function setupEqGroupChangeHandler() {
     if (!select) return;
 
     select.addEventListener("change", async function () {
+        if (isCurrentMode()) {
+            loadCurrentAnalysis();
+            return;
+        }
         const isCycleMode = document.querySelector(".acv-chart-wrapper").style.display !== "none";
         if (isCycleMode) {
             handleCycleSelectionsChange({ from: "eq-change" });
@@ -387,9 +391,20 @@ function showWrapper(type) {
     const effiWrapper = document.querySelector(".acv-effi-wrapper");
     const monWrapper = document.querySelector(".acv-mon-wrapper");
 
+    const currentWrapper = document.querySelector(".acv-mon-current");
+    if (type !== "current" && typeof cancelCurrentRequest === "function") cancelCurrentRequest();
+    if (currentWrapper) currentWrapper.style.display = type === "current" ? "block" : "none";
+    const recipeSelect = document.getElementById("recipe-select");
+    if (recipeSelect) recipeSelect.hidden = type === "current";
+
     const show = (el, on) => { if (el) el.style.display = on ? "block" : "none"; };
 
-    if (type === "cycle") {
+    if (type === "current") {
+        show(cycleWrapper, false);
+        show(effiWrapper, false);
+        show(monWrapper, false);
+        setActiveButton("btn-powermoller");
+    } else if (type === "cycle") {
         show(cycleWrapper, true);
         show(effiWrapper, false);
         show(monWrapper, false);
@@ -486,6 +501,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 날짜 초기화 버튼
     document.getElementById("date-init-btn")?.addEventListener("click", () => {
         document.getElementById("date-range").value = "";
+        if (isCurrentMode()) {
+            clearDateRange(true);
+            loadCurrentAnalysis();
+            return;
+        }
         const isCycleMode = document.querySelector(".acv-chart-wrapper").style.display !== "none";
         const isEffiMode = document.querySelector(".acv-effi-wrapper").style.display !== "none";
 
@@ -507,6 +527,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // 날짜 변경
     document.getElementById("date-range")?.addEventListener("change", () => {
         if (__isProgrammaticDateSet) return;  // ✅ 프로그램적 변경일 때는 무시
+        if (isCurrentMode()) {
+            loadCurrentAnalysis();
+            return;
+        }
         handleCycleSelectionsChange({ from: "date-change", requireDate: true });
     });
 
@@ -518,6 +542,10 @@ document.addEventListener("DOMContentLoaded", () => {
         populateEqGroupSelectByShift(shiftKey);
         const eqSelect = document.getElementById("eq-group-select");
         if (eqSelect) eqSelect.value = "all";
+        if (isCurrentMode()) {
+            loadCurrentAnalysis();
+            return;
+        }
 
         const isCycleMode = document.querySelector(".acv-chart-wrapper").style.display !== "none";
         const isEffiMode = document.querySelector(".acv-effi-wrapper").style.display !== "none";
@@ -554,6 +582,11 @@ function setupToggleViewButtons() {
     const btnCycle = document.getElementById("btn-cycle");
     const btnEfficiency = document.getElementById("btn-efficiency");
     const btnMonitor = document.getElementById("btn-monitor");
+    document.getElementById("btn-powermoller")?.addEventListener("click", () => {
+        resetFilters(false);
+        showWrapper("current");
+        loadCurrentAnalysis();
+    });
 
     btnCycle?.addEventListener("click", () => {
         resetFilters(false); // Shift 유지
