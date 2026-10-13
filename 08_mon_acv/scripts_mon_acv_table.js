@@ -179,6 +179,7 @@ function openSummaryPopup() {
 
             // 1) Shift 변경 → Recipe 후보 재구성 → EQ 후보도 재구성 → 테이블(Shift 기준) 렌더
             shiftSelect?.addEventListener('change', () => {
+                if (document.querySelector(".acv-mon-wrapper")?.style.display === "none") return;
                 // Shift 바뀌면 하위 선택 초기화
                 recipeSelect && (recipeSelect.value = 'all');
                 eqSelect && (eqSelect.value = 'all');
@@ -190,6 +191,7 @@ function openSummaryPopup() {
 
             // 2) Recipe 변경 → EQ 후보 재구성 → 테이블(Shift+Recipe) 렌더
             recipeSelect?.addEventListener('change', () => {
+                if (document.querySelector(".acv-mon-wrapper")?.style.display === "none") return;
                 // Recipe 바뀌면 EQ 초기화
                 populateRecipeSelectByEq();
                 populateEqSelectByRecipe();
@@ -199,6 +201,7 @@ function openSummaryPopup() {
 
             // 3) EQ 변경 → 테이블(Shift+Recipe+EQ) 렌더
             eqSelect?.addEventListener('change', () => {
+                if (document.querySelector(".acv-mon-wrapper")?.style.display === "none") return;
                 populateRecipeSelectByEq();
                 populateEqSelectByRecipe();
                 renderMonTable(getFilteredMonData());
@@ -229,6 +232,10 @@ function setupMonExcelExport() {
 
 // ===== 엑셀 저장 핸들러 =====
 function handleMonExcelExport() {
+    if (isCurrentMode()) {
+        exportCurrentExcel();
+        return;
+    }
     // 설비 효율 탭에서는 현재 상세 표를 저장
     const efficiencyWrapper = document.querySelector('.acv-effi-wrapper');
     if (efficiencyWrapper && efficiencyWrapper.style.display !== 'none') {
