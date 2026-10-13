@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickLoad Monitoring</title>
+    <link rel="stylesheet" href="css/100_utils/styles.css">
+    <link rel="stylesheet" href="css/100_utils/flatpickr.min.css">
+    <link rel="stylesheet" href="css/07_mon_load/styles_motor_load.css">
+    <link rel="stylesheet" href="css/07_mon_load/styles_motor_load_popup.css">
+
+    <script>
+        let changeHistoryData = {}; // 전역에서 선언하여 두 스크립트에서 공유
+    </script>
+
+    <script src="js/100_utils/jquery.min.js"></script>
+    <script src="js/100_utils/dataTables.min.js"></script>
+    <script src="js/100_utils/echarts.min.js"></script>
+    <script src="js/100_utils/xlsx.full.min.js"></script>
+    <script src="js/100_utils/flatpickr.min.js"></script>
+    <script src="js/100_utils/ko.js"></script>
+    <script src="js/100_utils/dataTable.fixedHeader.min.js"></script>
+    <script src="js/100_utils/dataTable.fixedColumns.min.js"></script>
+</head>
+
+<body>
+    <h1 class="top-container">모터 부하율 모니터링</h1>
+
+    <!-- 사이드바 -->
+    <div id="sidebar-placeholder"></div>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="container">
+        <!-- 필터 버튼 영역 -->
+        <div class="menu-container">
+            <div class="group1-container">
+                <h3>상세 조회</h3>
+                <div class="button_group">
+                    <button class="bay-group-btn" data-group="axis-status-btn">모니터링</button>
+                </div>
+                
+            </div>
+
+            <div class="group2-container">
+                <div class="filter-header">
+                    <h3>필터링 옵션</h3>
+                    <span class="filter-subtext">📌로딩 데이터 기간: 최근 30일</span>
+                </div>
+                
+                <div class="group2-inner-1">
+
+                    <select id="eq-group-select">
+                            <option value="all">Shift 전체</option>
+                            <option value="a">A조</option>
+                            <option value="b">B조</option>
+                            <option value="c">C조</option>
+                            <option value="d">D조</option>
+                    </select>
+
+                    <select id="eqp-dropdown" class="eqp-dropdown">
+                            <option value="">설비 선택</option>
+                            <!-- EQP 옵션들이 여기에 추가될 것입니다. -->
+                    </select>
+
+                    <select id="axis-type-dropdown" class="axis-type-dropdown">
+                        <option value="" disabled selected>Type 선택</option> <!-- 기본값 설정 -->
+                        <option value="Ball Screw">Ball Screw</option>
+                        <option value="Auto Stage">Auto Stage</option>
+                    </select>
+
+                    <select id="axis-dropdown" class="axis-dropdown">
+                        <option value="ALL">Axis 선택</option>
+                        <!-- SM1~SM64 옵션들이 여기에 추가될 것입니다. -->
+                    </select>
+                </div>
+                <div class="group2-inner-2">
+                    <input type="text" id="date-range" class="form-control" placeholder="날짜를 선택하세요">
+                    <button id="date-init-btn" class="date-init-btn">날짜 초기화</button>
+                </div>
+ 
+            </div>
+
+            <div class="group3-container">
+                <h3>이상 모니터링</h3>
+                <div class="summary-container">
+                    <!-- scripts_motor_load_table.js 에서 카드 동적 생성 -->
+                </div>
+            </div>
+
+            <div class="group4-container">
+                <h3>추가 옵션</h3>
+                <div class = "option_container">
+                    <button id="change-history-btn">교체 이력</button>
+                    <button id="xlsx-save-btn">엑셀 저장</button>
+
+                </div>
+            </div> 
+        </div>
+
+        <!-- 모니터링 탭 -->
+        <div class="tab-section" id="monitoring-tab-section">
+            <div class="table-container">
+                <h2>모터 상세 모니터링</h2>
+
+                <div class="monitoring-content-row" id="monitoring-content-row">
+                    <div class="main-table-wrapper" id="main-table-wrapper">
+                        <div class="abnormal-eqp-filter-box">
+                            <label class="abnormal-eqp-filter-label">
+                                <input type="checkbox" id="abnormal-eqp-filter-checkbox">
+                                <span>이상 설비만 보기</span>
+                            </label>
+                        </div>
+                        <div class="main-table-scroll">
+                            <table id="main-table"></table>
+                        </div>
+                    </div>
+
+                    <div class="main-wrapper" id="monitoring-chart-wrapper">
+                        <div class="run-filter-box">
+                            <label class="run-filter-label">
+                                <input type="checkbox" id="run-filter-checkbox">
+                                <span>Idle 제외</span>
+                            </label>
+                        </div>
+
+                        <div class="monitoring-charts-container" id="monitoring-chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                
+    </div>
+
+    <script>
+        // 사이드바
+        $(function() {
+            // sidebar.html 로드 및 초기화
+            $("#sidebar-placeholder").load("sidebar.html", function() {
+                initSidebar(); // 스크립트 초기화 함수 호출
+            });
+        });
+    </script>
+
+    <script>
+        // 권한 체크 및 사용자 정보 표시
+        async function checkClientAuthority() {
+            try {
+                const response = await fetch('/check-client-authority');
+                const data = await response.json();
+
+                currentUserInfo = data;  // ✅ 전역 저장
+
+                setAdminMode(data.isAdmin);
+
+                const userNameContainer = document.createElement('div');
+                userNameContainer.id = 'user-name-display';
+
+                const userNameBox = document.createElement('div');
+                userNameBox.id = 'user-name-box';
+                userNameBox.innerText = `${data.authority} 모드 ( ${data.userName} )`;
+
+                userNameContainer.appendChild(userNameBox);
+                document.body.prepend(userNameContainer);
+            } catch (error) {
+                console.error('Error checking client authority:', error);
+            }
+        }
+
+        function setAdminMode(isAdmin) {
+            // 기존 버튼 (예: 공지사항 작성 버튼)
+            const writeButton = document.getElementById('notice-write-button');
+            if (writeButton) writeButton.style.display = isAdmin ? 'inline-block' : 'none';
+
+            // ✅ SPEC 변경 버튼도 관리자일 때만 표시
+            const specEditBtn = document.getElementById('toggle-spec-edit-btn');
+            if (specEditBtn) specEditBtn.style.display = isAdmin ? 'inline-block' : 'none';
+
+            // ✅ Ref 설정 버튼도 관리자만 보이게
+            const refSettingBtn = document.getElementById('ref-setting-btn');
+            if (refSettingBtn) refSettingBtn.style.display = isAdmin ? 'inline-block' : 'none';
+        }
+
+        // 초기 실행
+        document.addEventListener("DOMContentLoaded", () => {
+            checkClientAuthority();
+
+        });
+
+    </script>
+
+    <script src="js/07_mon_load/scripts_motor_load_init.js"></script>
+    <script src="js/07_mon_load/scripts_motor_load.js"></script>
+    <script src="js/07_mon_load/scripts_motor_load_chart.js"></script>
+    <script src="js/07_mon_load/scripts_motor_load_table.js"></script>
+    <script src="js/07_mon_load/scripts_motor_load_popup.js"></script>
+
+
+</body>
+</html>

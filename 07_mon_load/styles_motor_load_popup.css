@@ -1,0 +1,318 @@
+/* ========================== 상단 영역 */
+
+.top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 5px;
+    margin-top: 20px;
+    margin-bottom: 5px;
+    padding-right: 5px;
+}
+
+.controls2-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex: 0 0 70%;
+    min-height: 115px;
+    gap: 5px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.controls3-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex: 0 0 30%;
+    min-height: 115px;
+    gap: 5px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.controls-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+/* 새 필터 한 줄 배치 */
+.filter-inline-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: nowrap;
+}
+
+/* label 위 / control 아래 */
+.field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.field label {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+    white-space: nowrap;
+    min-height: 20px;
+}
+
+/* 개별 폭 조정 */
+.field-search-type .popup-form-control {
+    width: 120px;
+}
+
+.field-search-input .popup-input-control {
+    width: 180px;
+    text-align: left;
+}
+
+.field-search-btn {
+    justify-content: flex-end;
+}
+
+.field-search-btn label {
+    visibility: hidden;
+}
+
+.popup-btn-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.popup-btn {
+    width: 90px;
+    height: 32px;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 5px;
+    background-color: #6c757d;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.popup-btn:hover {
+    opacity: 0.9;
+}
+
+.popup-btn.active {
+    background-color: #007bff;
+}
+
+.excel-btn {
+    background-color: #28a745;
+}
+
+.excel-btn:hover {
+    background-color: #218838;
+    opacity: 1;
+}
+
+#siteFilter {
+    width: 90px;
+}
+
+#eqpFilter {
+    width: 100px;
+}
+
+#keywordType{
+    width: 100px;
+}
+
+#eqStateFilter {
+    width: 100px;
+}
+
+.popup-form-control {
+    width: 120px;
+    height: 30px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.popup-input-control {
+    width: 120px;
+    height: 30px;
+    font-size: 14px;
+    padding: 0 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.popup-input-control.keyword-wide {
+    width: 180px;
+    text-align: left;
+}
+
+.search-btn-inline {
+    width: 80px;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 10px;
+    background-color: #007bff;
+}
+
+.search-btn-inline:hover {
+    background-color: #0056b3;
+    opacity: 1;
+}
+
+.total-count-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5px;
+}
+
+#totalCount {
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+}
+
+h2 {
+    margin-bottom: 5px;
+}
+
+.title-with-range {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.title-with-range .date-range {
+    font-size: 14px;
+    color: #666;
+}
+
+/* ========================== 테이블 영역 */
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+    font-size: 13px;
+}
+
+th {
+    background-color: #f0f0f0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    cursor: pointer;
+    padding-left: 5px;
+    padding-right: 5px;
+    white-space: nowrap;
+}
+
+th.sortable {
+    position: relative;
+    cursor: pointer;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+th.sortable::after {
+    content: '';
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(0deg);
+    width: 10px;
+    height: 10px;
+    background-image: url("/css/caret-dropdown.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: transform 0.2s;
+    opacity: 0.4;
+}
+
+th.asc::after {
+    transform: translateY(-50%) rotate(180deg);
+    opacity: 1;
+}
+
+th.desc::after {
+    transform: translateY(-50%) rotate(0deg);
+    opacity: 1;
+}
+
+.table-scroll {
+    height: 670px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #ccc;
+    margin-top: 10px;
+}
+
+.table-scroll table {
+    width: auto;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.table-scroll thead th {
+    position: sticky;
+    top: 0;
+    background: #f2f2f2;
+    z-index: 1;
+}
+
+/* ========================== 로딩 오버레이 */
+
+#popup-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup-loading-spinner {
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

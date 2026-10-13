@@ -1,0 +1,774 @@
+html, body {
+    font-family: 'Segoe UI', 'Pretendard', sans-serif;
+    overflow : hidden;  /* ✅ 전체 페이지에서 스크롤 제거 */
+    margin: 0;
+    padding: 0;
+    margin-left: -50px;
+}
+
+/* ---------------------------- 관리자 모드 ip 영역 ---------------------------- */
+#user-name-display {
+  position: absolute;
+  top: 50px;
+  right: 35px;
+}
+
+/* ========================== 버튼 스타일 */
+
+.menu-container {
+    display: flex;
+    width: 1660px;
+    margin-top: -30px;
+    margin-bottom: 5px;
+}
+
+.menu-container button {
+    padding: 8px 20px;
+    height: 35px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+}
+  
+.group1-container h3,
+.group2-container h3,
+.group3-container h3,
+.group4-container h3 {
+    margin: 2px 0 2px 3px;  /* 위쪽 마진 제거 */
+    font-size: 18px;
+    color: #555;
+    border-left: 4px solid #007bff;
+    padding-left: 5px;
+    margin-bottom: 8px;
+}
+  
+.group1-container {
+    display: flex;
+    flex-direction: column; /* ✅ 수직 정렬로 변경 */
+    width: 345px;             /* 필요 시 줄바꿈 유도 */
+    height: 115px;
+    gap: 1px;
+    padding-left: 5px;
+    padding-right: 3px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.group2-container {
+    display: flex;
+    flex-direction: column; /* h3는 위에, 아래는 두 그룹이 좌우로 */
+    width: 455px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-right: 10px;
+}
+
+.filter-subtext {
+    font-size: 13px;
+    color: #888;
+    padding-bottom: 10px;
+    font-weight: 400;
+    white-space: nowrap; /* ✅ 줄바꿈 방지 */
+}
+
+/* 그룹 내부는 수평 정렬 */
+.group2-inner-1{
+  margin-left: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;  /* 요소 간 간격 */
+}
+
+.group2-inner-2 {
+  margin-top: 9px;
+  margin-left: 5px;
+  display: flex;
+  align-items: center;
+  flex-direction: row;     /* 👉 인풋과 버튼 가로 배치 */
+  gap: 5px;  /* 요소 간 간격 */
+}
+
+.group3-container {
+    display: flex;
+    position: relative; /* 버튼 절대 위치 기준이 됨 */
+    flex-direction: column; /* h3는 위에, 아래는 두 그룹이 좌우로 */
+    width: 448px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* ✅ h3 아래 두 그룹을 좌우 정렬 */
+.group3-inner-wrapper {
+    display: flex;
+    flex-direction: row;      /* 좌우 배치 */
+    align-items: flex-start;
+    gap: 5px;
+}
+  
+.group4-container {
+    display: flex;
+    position: relative;  /* ✅ 요거 추가하면 됩니다! */
+    flex-direction: column; /* ✅ 수직 정렬로 변경 */
+    width: 385px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+
+/* ========================== 버튼 디자인*/
+
+.button_group {
+    display: flex;
+    gap: 10px;
+    margin-left: 5px;
+}
+
+#date-range {
+  width: 183px;            /* 날짜 인풋 너비 */
+  height: 20px;            /* 높이 */
+  font-size: 14px;
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+
+#date-init-btn {
+    height: 32px;
+    width: 100px;
+    padding: 5px 15px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#date-init-btn:hover {
+    background-color: #0056b3;
+}
+
+.option_container{
+    display: flex;
+    flex-wrap: wrap;       /* 버튼 많을 경우 자동 줄바꿈 */
+    gap: 5px 10px;         /* 상하 5px, 좌우 10px 간격 */
+    padding: 3px;
+    margin-top: 0px;
+}
+
+#change-history-btn {
+  height: 32px;
+  padding: 5px 15px;
+  font-size: 14px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#ref-setting-btn {
+  height: 32px;
+  padding: 5px 15px;
+  font-size: 14px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#xlsx-save-btn {
+  height: 32px;
+  padding: 5px 15px;
+  font-size: 14px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#change-history-btn:hover,
+#ref-setting-btn:hover,
+#xlsx-save-btn:hover {
+  background-color: #218838;
+}
+
+/* ============================================================= 설비 그룹 박스*/
+/* Shift 조 드롭다운 */
+#eq-group-select {
+  width: 100px;       /* ✅ 원하는 너비로 조절 */
+  height: 30px;       /* ✅ 높이도 조정 */
+  font-size: 14px;    /* ✅ 글자 크기 */
+  padding: 5px;  /* ✅ 내부 여백 */
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+
+#eq-group-select option {
+  text-align: center;
+}
+
+/* 드롭다운 및 입력 필드 스타일 */
+#eqp-dropdown{
+  width: 100px;       /* ✅ 원하는 너비로 조절 */
+  height: 30px;       /* ✅ 높이도 조정 */
+  font-size: 14px;    /* ✅ 글자 크기 */
+  padding: 5px;  /* ✅ 내부 여백 */
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+#axis-type-dropdown{
+  width: 120px;       /* ✅ 원하는 너비로 조절 */
+  height: 30px;       /* ✅ 높이도 조정 */
+  font-size: 14px;    /* ✅ 글자 크기 */
+  padding: 5px;  /* ✅ 내부 여백 */
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+#axis-dropdown{
+  width: 100px;       /* ✅ 원하는 너비로 조절 */
+  height: 30px;       /* ✅ 높이도 조정 */
+  font-size: 14px;    /* ✅ 글자 크기 */
+  padding: 5px;  /* ✅ 내부 여백 */
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+
+/* 옵션 목록 가운데 정렬 */
+#eqp-dropdown option,
+#axis-type-dropdown option,
+#axis-dropdown option {
+  text-align: center;      /* 가운데 정렬 */
+}
+
+.flatpickr-monthDropdown-months,.numInputWrapper {
+  font-size: 16px !important; /* 원하는 글씨 크기로 변경 */
+}
+
+/* ====================== 메인 컨테이너 ====================== */
+
+.chart-container,
+.table-container {
+  width: 1660px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.chart-container h2,
+.table-container h2 {
+  margin: 0 0 12px 0;
+  padding-left: 0;
+}
+
+
+/* ====================== 차트 디자인 ====================== */
+
+.main-wrapper {
+  width: 1660px;
+  height: 700px;
+  margin-left: 0;
+}
+
+
+.pickloadcharts-container {
+  width: 100%;
+  min-height: 650px;
+  border: none; /* 기본은 없음 */
+  border-radius: 5px;
+}
+
+.pickloadcharts-container.with-border {
+  border: 1px solid #ccc; /* 안내문 있을 때만 표시 */
+}
+
+.chart-pair {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.linechart-container {
+  width: 100%;
+  height: 380px;
+}
+
+.pickbar-tooltip {
+  max-width: 400px;  /* 최대 너비 설정 */
+  max-height: 100px;  /* 최대 높이 설정 */
+  white-space: normal;  /* 텍스트 줄바꿈 허용 */
+  overflow: hidden;  /* 넘치는 내용 숨김 */
+  text-overflow: ellipsis;  /* 넘치는 텍스트에 ellipsis(...) 추가 */
+}
+
+#loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000; /* 다른 요소 위에 표시되도록 */
+  font-size: 20px;
+  color: #000;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 5px;
+  display: none; /* 처음에는 숨겨둠 */
+}
+
+
+/* ECharts 툴팁에 대한 스타일 */
+.pickbar-tooltip {
+  position: absolute;
+  z-index: 999; /* 드롭다운보다 낮은 값 설정 */
+}
+
+/* placeholder 텍스트 */
+.analysis-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 150px; /* 🔹 원하는 만큼 아래로 이동 */
+  font-size: 18px;
+  color: #666;
+  text-align: center;
+  z-index: 100;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 12px 20px;
+  border-radius: 8px;
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+/* ========================== 메인 테이블 */
+
+.main-table-wrapper {
+  width: 1660px;
+  height: 700px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow: hidden;  
+  margin-left: 0;
+}
+
+/* ===================== 모터 상세 모니터링 테이블 ===================== */
+.monitoring-title-row {
+  width: 1660px;
+  margin: 0 auto 5px auto;
+}
+
+.monitoring-title-row h2 {
+  margin: 0;
+}
+.main-table-scroll {
+  margin-top: 10px;
+  margin-left: 10px;
+  max-height: 640px;
+  overflow: auto;
+}
+
+/* 테이블 본체 */
+#main-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* 공통 셀 */
+#main-table th,
+#main-table td {
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 4px 8px;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+#main-table thead th {
+  border-top: 1px solid #000;
+}
+
+#main-table tr > *:first-child {
+  border-left: 1px solid #000;
+}
+
+/* 헤더 */
+#main-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: #f0f0f0;
+  font-weight: 700;
+}
+
+/* 첫 번째 컬럼 고정 */
+#main-table .axis-header,
+#main-table .axis-label-cell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+
+}
+
+/* 첫 번째 컬럼 헤더 */
+#main-table thead .axis-header {
+  z-index: 4;
+  background-color: #f0f0f0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* 첫 번째 컬럼 바디 */
+#main-table .axis-label-cell {
+  background-color: #f8fafc;
+  text-align: left;
+  padding-left: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 첫 번째 컬럼 폭 */
+#main-table col.col-axis {
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+}
+
+/* 설비 컬럼 폭 */
+#main-table col.col-eqp {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+#main-table .eqp-header,
+#main-table td[data-eqp] {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+#main-table .eqp-header {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* hover / selected */
+#main-table tbody tr:hover {
+  background-color: #f0f8ff;
+}
+
+#main-table tbody tr.selected {
+  background-color: #cce5ff;
+}
+
+/* 램프 */
+.lamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.lamp.with-text {
+  color: #fff;
+  font-size: 11px;
+}
+
+.lamp.green  { background: #28a745; }
+.lamp.orange { background: #ffa94d; }
+.lamp.red    { background: #ff6b6b; }
+
+/* 테이블 아래 차트 */
+#table-inline-charts {
+  margin-top: 15px;
+}
+
+/* ===================== FixedColumns가 일반 컬럼 위에 오도록 ===================== */
+.dtfc-fixed-left {
+  z-index: 20 !important;
+  background: #fff !important;
+}
+
+.dtfc-fixed-left table {
+  background: #fff !important;
+}
+
+/* 첫 번째 고정 컬럼 셀은 불투명 배경 */
+.dtfc-fixed-left th,
+.dtfc-fixed-left td {
+  background: #fff !important;
+  position: relative;
+  z-index: 21 !important;
+}
+
+/* 첫 번째 컬럼 body 색을 따로 쓰고 싶으면 여기서 지정 */
+.dtfc-fixed-left td.axis-label-cell {
+  background: #f8fafc !important;
+}
+
+/* 첫 번째 컬럼 헤더 */
+.dtfc-fixed-left th.axis-header {
+  background: #f0f0f0 !important;
+}
+
+/* 고정 컬럼의 오른쪽 경계선 강조 */
+.dtfc-fixed-left th:last-child,
+.dtfc-fixed-left td:last-child {
+  border-right: 2px solid #000 !important;
+}
+
+/* 스크롤되는 본문 테이블은 고정 컬럼보다 아래 */
+.dataTables_scrollBody {
+  position: relative;
+  z-index: 1;
+}
+
+.dataTables_scrollHead {
+  position: relative;
+  z-index: 2;
+}
+
+/* ===================== 모니터링 탭 레이아웃 ===================== */
+.monitoring-content-row {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  width: 1660px;
+  min-width: 1660px;
+  max-width: 1660px;
+  box-sizing: border-box;
+}
+
+/* ===================== 기본 상태 (설비 미선택) ===================== */
+/* 테이블 전체폭 */
+.monitoring-content-row .main-table-wrapper {
+  flex: 0 0 1660px;
+  width: 1660px;
+  min-width: 1660px;
+  max-width: 1660px;
+  transition: all 0.25s ease;
+}
+
+/* 차트는 완전히 숨김 */
+.monitoring-content-row #monitoring-chart-wrapper {
+  flex: 0 0 0px;
+  width: 0px;
+  min-width: 0px;
+  max-width: 0px;
+  overflow: hidden;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  transition: all 0.25s ease;
+}
+
+/* ===================== 설비 선택 후 ===================== */
+/* 테이블 축소 */
+.monitoring-content-row.has-eqp .main-table-wrapper {
+  flex: 0 0 346px;
+  width: 346px;
+  min-width: 346px;
+  max-width: 346px;
+
+}
+
+/* 차트 확장 */
+.monitoring-content-row.has-eqp #monitoring-chart-wrapper {
+  flex: 0 0 1306px;
+  width: 1306px;
+  min-width: 1306px;
+  max-width: 1306px;
+  opacity: 1;
+  overflow: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+/* 차트 내부 */
+.monitoring-charts-container {
+  width: 1295px;
+  min-height: 650px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* 축 미선택 안내 */
+.monitoring-chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 620px;
+  color: #666;
+  font-size: 16px;
+  text-align: center;
+}
+/* ===================== summary 부분 ===================== */
+
+.summary-container{
+  display: block;
+  overflow-x: auto;   /* ⭐ 핵심 */
+  overflow-y: hidden;
+  margin-top: 0px;
+}
+
+.summary-cards{
+  margin-left: 5px;
+  display:flex;
+  gap:10px;
+  flex-wrap: nowrap;   /* ⭐ wrap → nowrap */
+  text-align:center;
+}
+
+.summary-card{
+  --accent: #98a2b3;      /* 기본 포인트 색 (상태별 override) */
+  --bg: #ffffff;          /* 기본 배경 (상태별 override) */
+  flex: 0 0 auto;
+  width: 90px;
+  padding: 8px 2px;
+  border-radius: 5px;
+  background: var(--bg);
+  border: 1px solid #eaecf0;
+  box-shadow: 0 1px 2px rgba(16,24,40,.06);
+  position: relative;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.summary-card::before{
+  content:"";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 94px;
+  height: 5px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  opacity:.95;
+}
+
+.summary-card:hover{
+  transform: translateY(-1px);
+  border-color:#d0d5dd;
+  box-shadow: 0 6px 18px rgba(16,24,40,.10);
+}
+
+.summary-card .label{
+  font-size: 12px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #666;
+  letter-spacing: -0.2px;
+  text-align: center;
+}
+
+.summary-card .value{
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: #111;
+  text-align: center;
+  letter-spacing: -0.3px;
+  word-break: break-word;
+}
+
+.summary-card .value-sm{
+  font-size: 14px;
+}
+
+.summary-card.st-normal{
+  --accent: #cbd5e1;
+  --bg: #f8fafc;
+}
+
+.summary-card.st-orange{
+  --accent: #f59e0b;
+  --bg: #fffbeb;
+}
+
+.summary-card.st-red{
+  --accent: #ef4444;
+  --bg: #fff1f2;
+}
+
+.summary-empty{
+  padding: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+/* ===================== 상단 체크박스 공통 ===================== */
+.run-filter-box,
+.abnormal-eqp-filter-box {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 5px 15px 10px 5px;
+  min-height: 40px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.run-filter-label,
+.abnormal-eqp-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+
+#run-filter-checkbox,
+#abnormal-eqp-filter-checkbox {
+  width: 18px;
+  height: 18px;
+  
+  cursor: pointer;
+}
+
+.run-filter-label span,
+.abnormal-eqp-filter-label span {
+  white-space: nowrap;
+  line-height: 1;
+}
