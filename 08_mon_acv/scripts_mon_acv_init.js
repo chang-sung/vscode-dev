@@ -30,6 +30,12 @@ let __isProgrammaticDateSet = false;
 function __beginProgDateChange() { __isProgrammaticDateSet = true; }
 function __endProgDateChange() { setTimeout(() => { __isProgrammaticDateSet = false; }, 0); }
 
+// 날짜 범위의 시작일만 선택된 상태에서는 조회를 보류
+function isDateRangeSelectionPending() {
+    const selectedDates = window.__acvDatePicker?.selectedDates;
+    return Array.isArray(selectedDates) && selectedDates.length === 1;
+}
+
 // ====== 날짜 유틸 ======
 
 // 특정 일자(day: 'YYYY-MM-DD')로 date-range를 설정하고 change 이벤트 트리거
@@ -526,7 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 날짜 변경
     document.getElementById("date-range")?.addEventListener("change", () => {
-        if (__isProgrammaticDateSet) return;  // ✅ 프로그램적 변경일 때는 무시
+        if (__isProgrammaticDateSet || isDateRangeSelectionPending()) return;
         if (isCurrentMode()) {
             loadCurrentAnalysis();
             return;
