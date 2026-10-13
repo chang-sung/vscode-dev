@@ -324,3 +324,39 @@ app.get('/get-latest-recipe-map', (req, res) => {
         res.json(rows || []);
     });
 });
+
+// 파워몰러 전류 원본 조회: Recipe는 전류 로그에 없어 적용하지 않음
+app.get('/get-acv-current-data', (req, res) => {
+    const eq = typeof req.query.eq === 'string' ? req.query.eq.trim() : '';
+    const start = req.query.start;
+    const end = req.query.end;
+    function validDay(value) {
+        if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+        const day = new Date(value + 'T00:00:00Z');
+        return Number.isFinite(day.getTime()) && day.toISOString().slice(0, 10) === value;
+    }
+    if (!eq || eq === 'all' || !validDay(start) || !validDay(end) || start > end) {
+        return res.status(400).json({ error: '설비와 올바른 시작/종료 날짜를 선택하세요.' });
+    }
+    const nextDay = new Date(end + 'T00:00:00Z');
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    const endExclusive = nextDay.toISOString().slice(0, 10) + ' 00:00:00';
+    const sql = `
+        SELECT WriteTime, EQ_Name,
+            LD1_I, LD2_I, LD3_I, LD4_I,
+            CH1_I, CH2_I, CH3_I, CH4_I,
+            ULD1_I, ULD2_I, ULD3_I, ULD4_I
+        FROM plm_s.acv_powermoller_volt_current_log
+        WHERE EQ_Name = ?
+          AND WriteTime >= ?
+          AND WriteTime < ?
+        ORDER BY WriteTime ASC
+    `;
+    db_plms.query(sql, [eq, start + ' 00:00:00', endExclusive], (err, rows) => {
+        if (err) {
+            console.error('파워몰러 전류 DB 조회 오류:', err);
+            return res.status(500).json({ error: '전류 데이터 DB 조회 실패' });
+        }
+        res.json(rows || []);
+    });
+});
