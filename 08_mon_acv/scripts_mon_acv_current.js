@@ -7,7 +7,7 @@ let currentRows = [];
 let currentTableRows = [];
 let currentPage = 0;
 let currentChart = null;
-let currentRequest = null;
+let currentRequest = null; 
 
 function isCurrentMode() {
     const wrapper = document.querySelector('.acv-mon-current');
