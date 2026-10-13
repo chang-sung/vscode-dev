@@ -1,5 +1,6 @@
 let __globalBoardRows = [];
 const selectedLoadRows = new Set();
+let mainTableRenderVersion = 0;
 
 /* ===================== 공통 유틸 ===================== */
 
@@ -146,7 +147,6 @@ function renderMonitoringSummaryCards(items) {
 
           const eqpDropdown = document.getElementById('eqp-dropdown');
           const axisTypeDropdown = document.getElementById('axis-type-dropdown');
-          const axisDropdown = document.getElementById('axis-dropdown');
 
           let selectedEqpValue = '';
 
@@ -177,18 +177,14 @@ function renderMonitoringSummaryCards(items) {
               updateMonitoringLayout();
           }
 
+          // 이전 차트 응답이 새 카드의 선택을 덮어쓰지 않도록 즉시 무효화한다.
+          removeCharts(monitoringChartsContainer);
+
+          // 차트 조회 전에 축을 확정해 테이블 렌더에서 한 번만 조회한다.
+          setAxisDropdown(getSmListForType(type || 'Ball Screw'), axis || 'ALL');
+
           if (typeof renderMainTableAllEqps === 'function') {
               await renderMainTableAllEqps(type || 'Ball Screw');
-          }
-
-          // renderMainTableAllEqps 내부에서 axis dropdown을 다시 그리므로
-          // 테이블 렌더 후 원하는 axis를 다시 선택
-          if (axisDropdown && axis) {
-              axisDropdown.value = axis;
-          }
-
-          if (typeof renderMonitoringCharts === 'function') {
-              renderMonitoringCharts();
           }
       });
   });
@@ -344,10 +340,12 @@ function initMainTableDT($table) {
 /* ===================== 메인 렌더 ===================== */
 
 async function renderMainTableAllEqps(selectedType = 'Ball Screw') {
+    const renderVersion = ++mainTableRenderVersion;
     const $table = $('#main-table');
 
     try {
         const boardRows = await fetchBoardSummaryRows();
+        if (renderVersion !== mainTableRenderVersion) return;
         const boardMap = buildBoardMap(boardRows);
 
         const shiftKey = ($('#eq-group-select').val() || 'all').toLowerCase();
