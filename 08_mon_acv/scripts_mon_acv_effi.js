@@ -257,7 +257,7 @@ async function renderEqpEfficiencyChart(data, chartEl) {
             ].join('<br/>');
         }
         },
-        grid: { left: 65, right: 10, top: 30, bottom: 60 },
+        grid: { left: 65, right: 10, top: 50, bottom: 60 },
         xAxis: { type: 'value', min: 0, max: 100 },
         yAxis: { type: 'category', inverse: true, data: yLabels, axisLabel: { fontSize: 12 } },
         series: [
