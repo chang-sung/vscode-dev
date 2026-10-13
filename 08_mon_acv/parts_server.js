@@ -143,7 +143,7 @@ app.get('/get-first-cv-data', async (req, res) => {
     if (!start || !end) {
         const now = new Date();
         const thirtyDaysAgo = new Date(now);
-        thirtyDaysAgo.setDate(now.getDate() - 100);
+        thirtyDaysAgo.setDate(now.getDate() - 30);
 
         start = thirtyDaysAgo.toISOString().slice(0, 10) + ' 00:00:00';
         end = now.toISOString().slice(0, 10) + ' 23:59:59';
@@ -187,7 +187,7 @@ app.get('/get-acv-summary', (req, res) => {
         MAX(press_time)         AS max_press_time,
         MAX(exhaust_time)       AS max_exhaust_time
         FROM acv_run_summary
-        WHERE track_in >= DATE_SUB(NOW(), INTERVAL 300 DAY)
+        WHERE track_in >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         GROUP BY EQ_Name, TRIM(recipe)
         ORDER BY EQ_Name ASC, max_micro_press_cnt DESC
     `;
@@ -206,7 +206,9 @@ app.get('/get-acv-recipes', (req, res) => {
     const sql = `
         SELECT DISTINCT TRIM(recipe) AS recipe
         FROM acv_run_summary
-        WHERE recipe IS NOT NULL AND recipe <> ''
+        WHERE recipe IS NOT NULL 
+            AND recipe <> ''
+            AND track_in >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         ORDER BY recipe ASC
     `;
 
@@ -230,7 +232,7 @@ app.get('/get-acv-trend-chart', (req, res) => {
     if (!start || !end) {
         const now = new Date();
         const d30 = new Date(now);
-        d30.setDate(now.getDate() - 300);
+        d30.setDate(now.getDate() - 30);
         start = `${d30.toISOString().slice(0,10)} 00:00:00`;
         end   = `${now.toISOString().slice(0,10)} 23:59:59`;
     }
@@ -308,7 +310,7 @@ app.get('/get-latest-recipe-map', (req, res) => {
         JOIN (
         SELECT EQ_Name, MAX(track_in) AS latest
         FROM acv_run_summary
-        WHERE track_in >= DATE_SUB(NOW(), INTERVAL 300 DAY)
+        WHERE track_in >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         GROUP BY EQ_Name
         ) t ON t.EQ_Name = s.EQ_Name AND s.track_in = t.latest
         ORDER BY s.EQ_Name
