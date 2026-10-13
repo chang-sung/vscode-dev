@@ -489,7 +489,7 @@ table.dataTable thead td {
 }
 
 
-/* ========================== 팝업 ========================== */
+/* ========================== 효율 상세 정보 ========================== */
 
 
 .effi-detail-content {
@@ -533,7 +533,8 @@ table.dataTable thead td {
     border-collapse: collapse;
     width: 100%;
     font-size: 14px;
-    min-width: 620px;
+    min-width: 460px;
+    table-layout: fixed;
     white-space: nowrap;
 }
 
@@ -622,4 +623,39 @@ table.dataTable thead td {
 
 .effi-detail-content thead th {
     cursor: pointer;
+}
+
+/* 효율 상세 표: 설비 / 시간 / 효율 / CV1~CV4 */
+#effi-detail-data-table th,
+#effi-detail-data-table td {
+    box-sizing: border-box;
+    padding: 6px 4px;
+}
+
+#effi-detail-data-table .effi-col-eq { width: 70px; }
+#effi-detail-data-table .effi-col-time { width: 110px; }
+#effi-detail-data-table .effi-col-effi { width: 56px; }
+#effi-detail-data-table .effi-col-cv { width: 56px; }
+
+#effi-detail-data-table td.effi-col-time,
+#effi-detail-data-table td.effi-col-cv {
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+#effi-detail-data-table td.effi-col-cv,
+#effi-detail-data-table td.effi-col-eq {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+#effi-detail-data-table th {
+    font-size: 12px;
+    padding-right: 12px;
+}
+
+#effi-detail-data-table th::after {
+    right: 3px;
+    width: 8px;
+    height: 8px;
 }
