@@ -127,7 +127,11 @@ function setAxisDropdown(list, selected = 'ALL') {
 
     list.forEach(sm => {
         axisDropdown.append(
-            `<option value="${sm}" ${sm === selected ? 'selected' : ''}>${sm}</option>`
+            $('<option>', {
+                value: sm,
+                text: window.smLabels?.[sm] || sm,
+                selected: sm === selected
+            })
         );
     });
 }
