@@ -25,13 +25,13 @@ app.get('/get-ph2-motor-pick-load-data', (req, res) => {
         params.push(eqp);
     }
 
-    // startDate/endDate가 유효하면 그대로 사용, 아니면 최근 30일 자동
+    // startDate/endDate가 유효하면 그대로 사용, 아니면 최근 6개월 자동
     if (isValidDate(startDate) && isValidDate(endDate)) {
         query += ` AND WriteTime BETWEEN ? AND ?`;
         params.push(startDate, endDate);
     } else {
-        // 서버/DB 기준 최근 30일
-        query += ` AND WriteTime BETWEEN (NOW() - INTERVAL 30 DAY) AND NOW()`;
+        // 서버/DB 기준 최근 6개월
+        query += ` AND WriteTime BETWEEN (NOW() - INTERVAL 6 MONTH) AND NOW()`;
     }
 
     query += ` ORDER BY WriteTime ASC`;

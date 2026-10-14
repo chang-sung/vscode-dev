@@ -9,7 +9,7 @@
 let chartInstances = [];
 const chartRenderVersions = new WeakMap();
 
-const DEFAULT_DAYS_RANGE = 30;
+const DEFAULT_MONTHS_RANGE = 6;
 
 let idleThresholdMap = null;
 let isRunFilterEnabled = false;
@@ -179,10 +179,20 @@ function safeShowAnalysisText(message, targetSelector) {
     }
 }
 
+// 이전 달에 같은 일자가 없으면 해당 월의 마지막 날을 사용한다.
+function subtractMonths(date, months) {
+    const result = new Date(date);
+    const day = result.getDate();
+    result.setDate(1);
+    result.setMonth(result.getMonth() - months);
+    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+    result.setDate(Math.min(day, lastDay));
+    return result;
+}
+
 function getDefaultQueryRange() {
     const today = new Date();
-    const from = new Date(today);
-    from.setDate(from.getDate() - DEFAULT_DAYS_RANGE + 1);
+    const from = subtractMonths(today, DEFAULT_MONTHS_RANGE);
 
     return {
         startDate: `${toYMDLocal(from)} 00:00:00`,
@@ -445,8 +455,8 @@ function createLineChart(containerId, seriesData, groupLabel) {
     const maxTimestamp = Math.max(...allTimestamps);
     const range = Math.max(1, maxTimestamp - minTimestamp);
 
-    const oneMonthAgo = maxTimestamp - (DEFAULT_DAYS_RANGE * 24 * 60 * 60 * 1000);
-    const startPercent = Math.max(0, ((oneMonthAgo - minTimestamp) / range) * 100);
+    const sixMonthsAgo = subtractMonths(new Date(maxTimestamp), DEFAULT_MONTHS_RANGE).getTime();
+    const startPercent = Math.max(0, ((sixMonthsAgo - minTimestamp) / range) * 100);
     const endPercent = 100;
 
     const option = {
