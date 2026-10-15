@@ -21,7 +21,12 @@ function loadEfficiencyAnalysis(selectedEq = "all") {
     }
 
     if (dateRange) {
-        const [start, endRaw] = dateRange.split(" ~ ");
+        // flatpickr 한국어 구분자와 관계없이 선택한 날짜를 사용
+        const picker = window.__acvDatePicker;
+        const dates = picker?.selectedDates?.length
+            ? picker.selectedDates.map(date => picker.formatDate(date, "Y-m-d"))
+            : dateRange.match(/\d{4}-\d{2}-\d{2}/g) || [];
+        const [start, endRaw] = dates;
         const end = endRaw || start;
         params.push(`start=${start} 00:00:00`);
         params.push(`end=${end} 23:59:59`);
@@ -151,13 +156,8 @@ function renderDailyEfficiencyChart(data, chartEl) {
 
 // ✅ 설비별 평균 효율 차트
 async function renderEqpEfficiencyChart(data, chartEl) {
-    const dateInput = document.getElementById("date-range");
-    const userFiltered = (() => {
-        if (!dateInput?.value) return false;
-        const [start, end] = dateInput.value.split(/\s*~\s*/);
-        if (!end) return false;
-        return start !== end;
-    })();
+    // 같은 날을 시작/종료일로 선택한 경우도 사용자 날짜 필터로 인정
+    const userFiltered = !!document.getElementById("date-range")?.value?.trim();
 
     // (1) 날짜 자동 보정: 최근 7일
     let filteredData = data;
@@ -165,6 +165,7 @@ async function renderEqpEfficiencyChart(data, chartEl) {
         const today = new Date();
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(today.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
         filteredData = data.filter(row => {
         const writeTime = new Date(row.writeTime);
         return writeTime >= sevenDaysAgo && writeTime <= today;
@@ -230,7 +231,7 @@ async function renderEqpEfficiencyChart(data, chartEl) {
     if (!hasMeaningfulData) {
         eqpChart?.dispose();
         eqpChart = null;
-        showAnalysisText("최근 7일간 데이터가 없습니다.", "#effi-middle-container");
+        showAnalysisText(userFiltered ? "선택한 기간에 데이터가 없습니다." : "최근 7일간 데이터가 없습니다.", "#effi-middle-container");
         return;
     }
 
