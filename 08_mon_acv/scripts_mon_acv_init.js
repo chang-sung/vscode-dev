@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 날짜 초기화 버튼
     document.getElementById("date-init-btn")?.addEventListener("click", () => {
-        document.getElementById("date-range").value = "";
+        clearDateRange(true);
         if (isCurrentMode()) {
             clearDateRange(true);
             loadCurrentAnalysis();
@@ -526,7 +526,8 @@ document.addEventListener("DOMContentLoaded", () => {
             eqpChart?.dispose?.();
             weeklyChart = dailyChart = eqpChart = null;
             const shiftKey = document.getElementById("shift-select")?.value || "all";
-            loadEfficiencyAnalysis("all", shiftKey);
+            const eqName = document.getElementById("eq-group-select")?.value || "all";
+            loadEfficiencyAnalysis(eqName, shiftKey);
         }
     });
 
@@ -535,6 +536,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (__isProgrammaticDateSet || isDateRangeSelectionPending()) return;
         if (isCurrentMode()) {
             loadCurrentAnalysis();
+            return;
+        }
+        const isEffiMode = document.querySelector(".acv-effi-wrapper").style.display !== "none";
+        if (isEffiMode && typeof loadEfficiencyAnalysis === "function") {
+            const eqName = document.getElementById("eq-group-select")?.value || "all";
+            const shiftKey = document.getElementById("shift-select")?.value || "all";
+            loadEfficiencyAnalysis(eqName, shiftKey);
             return;
         }
         handleCycleSelectionsChange({ from: "date-change", requireDate: true });
