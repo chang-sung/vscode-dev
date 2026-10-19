@@ -29,7 +29,7 @@
 
 1. `Form1.cs`를 교체하고 새로 추가된 `.cs` 파일 9개를 같은 WinForms 프로젝트에 포함합니다. `Logger.cs`와 `RequesterMailRegistry.cs`는 기존 파일을 계속 사용합니다.
 2. 파일을 명시적으로 포함하는 프로젝트에서는 **프로젝트 → 추가 → 기존 항목**으로 새 파일을 추가합니다. SDK 형식 프로젝트에서 해당 폴더의 파일을 자동 포함한다면 별도 추가 작업이 필요하지 않습니다.
-3. `Form1.Designer.cs`, `Form1.resx`, `Program.cs`와 기존 네임스페이스/컨트롤 이름은 그대로 사용합니다. MySQL 패키지와 전역 using 설정, Excel Interop 참조도 기존 프로젝트 설정을 사용합니다.
+3. `Form1.Designer.cs`, `Form1.resx`, `Program.cs`와 기존 네임스페이스/컨트롤 이름은 그대로 사용합니다. DB를 사용하는 서비스 5개에는 `using MySql.Data.MySqlClient;`가 포함되어 있습니다. 기존 프로젝트의 `MySql.Data` NuGet 패키지와 Excel Interop 참조를 사용합니다. 프로젝트가 `MySqlConnector` 패키지를 사용한다면 해당 5개 파일의 지시문을 `using MySqlConnector;`로 맞춥니다.
 4. 입력 파일/로그 경로 변경은 `ParserSettings.cs`에서, 기존 DB 연결 문자열 변경은 `Form1.cs`에서 합니다.
 5. 프로젝트를 빌드한 뒤 기존 입력 파일로 재고 목록·개수, 가격/구매 DB 저장, 구매 동기화 및 자동 종료를 확인합니다. 같은 날 두 번 실행하여 Drop 로그 중복이 추가되지 않는지도 확인합니다.
 
