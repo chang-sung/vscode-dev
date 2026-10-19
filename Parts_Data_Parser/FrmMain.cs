@@ -1766,12 +1766,12 @@ namespace log_parser
                 {
                     conn.Open();
                     using (var cmd = new MySqlCommand(@"
-                        SELECT `No`, Q_Code, Parts_Div, P_N, Requester, Req_Qty, Order_Qty
+                        SELECT Req_Date, Site, EQP_Div, Q_Code, Parts_Div, P_N, Requester, Req_Qty, Order_Qty
                         FROM parts_purchase_list
                         WHERE Req_Date >= @today
                           AND Req_Date < @tomorrow
                           AND Purchase_Status = 'Drop'
-                        ORDER BY `No`", conn))
+                        ORDER BY Req_Date, Site, EQP_Div, Q_Code", conn))
                     {
                         cmd.Parameters.AddWithValue("@today", today);
                         cmd.Parameters.AddWithValue("@tomorrow", today.AddDays(1));
@@ -1779,12 +1779,12 @@ namespace log_parser
                         {
                             while (reader.Read())
                             {
-                                string no = reader["No"].ToString();
+                                string key = CreateDropPurchaseKey(reader);
                                 string requester = reader["Requester"].ToString();
                                 string requesterMail = RequesterMailRegistry.GetEmail(requester);
                                 string line = $"{reader["Q_Code"]}| {reader["Parts_Div"]}| {reader["P_N"]}| {requester}| {reader["Req_Qty"]}| {reader["Order_Qty"]}| Drop| {requesterMail}";
-                                // 한 건을 한 줄로 저장하고, 끝의 No로 재실행 후에도 식별한다.
-                                targets[no] = line.Replace("\r", " ").Replace("\n", " ");
+                                // 한 건을 한 줄로 저장하고, 7개 컬럼의 조합으로 재실행 후에도 식별한다.
+                                targets[key] = line.Replace("\r", " ").Replace("\n", " ");
                             }
                         }
                     }
@@ -1796,6 +1796,41 @@ namespace log_parser
             catch (Exception ex)
             {
                 Logger.Error($"[수동 Drop] 로그 기록 실패: {ex.Message}");
+            }
+        }
+
+        // No는 수동 변경될 수 있으므로 구매 건의 7개 값만으로 영속 중복 키를 만든다.
+        private static string CreateDropPurchaseKey(System.Data.IDataRecord row)
+        {
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
+            string[] columns = { "Req_Date", "Site", "EQP_Div", "Q_Code", "Parts_Div", "P_N", "Req_Qty" };
+            var keyData = new StringBuilder();
+            foreach (string column in columns)
+            {
+                object value = row[column];
+                if (value == null || value == DBNull.Value)
+                {
+                    // NULL과 빈 문자열을 구별한다.
+                    keyData.Append("-1:");
+                    continue;
+                }
+
+                string text;
+                if (column == "Req_Date")
+                    text = Convert.ToDateTime(value, culture).ToString("yyyy-MM-ddTHH:mm:ss.fffffff", culture);
+                else if (column == "Req_Qty")
+                    // 같은 수량 1 / 1.0 / 1.00은 같은 값으로 정규화한다.
+                    text = Convert.ToDecimal(value, culture).ToString("G29", culture);
+                else
+                    text = Convert.ToString(value, culture);
+
+                // 길이 접두어로 구분자나 줄바꿈이 값에 있어도 서로 다른 조합이 충돌하지 않는다.
+                keyData.Append(text.Length.ToString(culture)).Append(':').Append(text);
+            }
+
+            using (var hash = System.Security.Cryptography.SHA256.Create())
+            {
+                return Convert.ToBase64String(hash.ComputeHash(Encoding.UTF8.GetBytes(keyData.ToString())));
             }
         }
 

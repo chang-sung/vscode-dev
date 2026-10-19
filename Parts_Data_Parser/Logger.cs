@@ -110,7 +110,7 @@ namespace log_parser
             }
         }
 
-        // 중복 키를 로그 자체에 저장하므로 프로그램을 재시작해도 같은 No는 누적되지 않는다.
+        // 중복 키를 로그 자체에 저장하므로 프로그램을 재시작해도 같은 7개 컬럼 조합은 누적되지 않는다.
         // 기존 8개 항목 뒤에 Drop 전용 식별자만 추가한다.
         public static int AppendDropStatusUpdates(DateTime date, IDictionary<string, string> targets)
         {
@@ -124,8 +124,8 @@ namespace log_parser
             {
                 Directory.CreateDirectory(_statusUpdateLogDir);
                 string path = Path.Combine(_statusUpdateLogDir, $"PurchaseStatus_{date:yyyy-MM-dd}.txt");
-                const string marker = "| DropNo=";
-                var existingNos = new HashSet<string>(StringComparer.Ordinal);
+                const string marker = "| DropKey=";
+                var existingKeys = new HashSet<string>(StringComparer.Ordinal);
 
                 if (File.Exists(path))
                 {
@@ -133,7 +133,7 @@ namespace log_parser
                     {
                         int markerIndex = line.LastIndexOf(marker, StringComparison.Ordinal);
                         if (markerIndex >= 0)
-                            existingNos.Add(line.Substring(markerIndex + marker.Length).Trim());
+                            existingKeys.Add(line.Substring(markerIndex + marker.Length).Trim());
                     }
                 }
 
@@ -141,7 +141,7 @@ namespace log_parser
                 {
                     foreach (var target in targets)
                     {
-                        if (!existingNos.Add(target.Key)) continue;
+                        if (!existingKeys.Add(target.Key)) continue;
                         writer.WriteLine($"{date:yyyy-MM-dd}, {target.Value}{marker}{target.Key}");
                         written++;
                     }
