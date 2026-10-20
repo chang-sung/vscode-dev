@@ -40,7 +40,7 @@ document.addEventListener("click", function (e) {
     const motor = td?.dataset?.motor;
     const pos = td?.dataset?.pos;
 
-    if (td && motor && typeof pos == 'string') {
+    if (td && motor && typeof pos === 'string') {
         document.querySelectorAll("#motorTable td").forEach(td => {
             td.classList.remove("inform-hover", "selected-td");
         });
@@ -187,11 +187,11 @@ document.addEventListener("keydown", (e) => {
 
 
 document.addEventListener("click", function (e) {
-    const td = e.target.closest("#motorTable tbody td");
+    const td = e.target.closest("td");
     if (!td) return;
 
-    const motorNum = td.dataset.motor;
-    const posLabel = td.dataset.pos;
+    const motor = td.dataset.motor;
+    const pos = td.dataset.pos;
 
     const isCommentIconClicked = e.target.tagName === "SPAN" && td.querySelector("span");
 
@@ -202,6 +202,6 @@ document.addEventListener("click", function (e) {
         td.classList.add("selected-td");
         selectedTd = td;
         openCommentPopup(motor, pos);
-        inforMode = false;
+        informMode = false;
     }
 });
