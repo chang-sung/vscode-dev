@@ -33,12 +33,30 @@ document.getElementById("inform-btn").addEventListener("click", () => {
     }
 });
 
+document.addEventListener("click", function (e) {
+    if (!informMode) return;
+
+    const td = e.target.closest("td");
+    const motor = td?.dataset?.motor;
+    const pos = td?.dataset?.pos;
+
+    if (td && motor && typeof pos == 'string') {
+        document.querySelectorAll("#motorTable td").forEach(td => {
+            td.classList.remove("inform-hover", "selected-td");
+        });
+
+        td.classList.add("selected-td");
+        selectedTd = td;
+        openCommentPopup(motor, pos);
+        informMode = false;
+    }
+});
 
 function openCommentPopup(motorNum, posNum) {
     const m = motor[motorNum];
     const posName = posNum === "ACC" ? "ACC" : posNum === "DEC" ? "DEC" : m.pos[posNum]?.name || "Unknown";
     const displayEqName = selectedTd.closest("tr").querySelector(".eq-name")?.textContent;
-    if (!displayEqName) return; // ✅ 추가 (헤더 클릭/예외 방지)
+
 
     const eqName = EqNameUtils.reverse(displayEqName);  // ✅ 실제 DB 이름으로 변환
 
@@ -172,34 +190,18 @@ document.addEventListener("click", function (e) {
     const td = e.target.closest("#motorTable tbody td");
     if (!td) return;
 
-    if (td.classList.contains("spec-editable")) return;
-
     const motorNum = td.dataset.motor;
     const posLabel = td.dataset.pos;
-    if (!motorNum || typeof posLabel !== "string") return;
 
-    const wasInformMode = informMode;
+    const isCommentIconClicked = e.target.tagName === "SPAN" && td.querySelector("span");
 
-    const isClickOnIcon =
-        e.target.tagName === "SPAN" &&
-        e.target.textContent?.includes("📝");
-
-    const shouldOpen = wasInformMode || isClickOnIcon;
-    if (!shouldOpen) return;
-
-    // 선택 표시
-    document.querySelectorAll("#motorTable tbody td").forEach(x => {
-        x.classList.remove("selected-td");
-    });
-
-    td.classList.add("selected-td");
-    selectedTd = td;
-
-    // 팝업 오픈
-    openCommentPopup(motorNum, posLabel);
-
-    // Inform 모드로 열었으면 모드 종료(UI 원복)
-    if (wasInformMode) {
-        exitInformMode();   // ✅ 버튼 텍스트, hover 효과 등 원복
+    if ((informMode || isCommentIconClicked) && motor && typeof pos === 'string') {
+        document.querySelectorAll("#motorTable td").forEach(td => {
+            td.classList.remove("inform-hover", "selected-td");
+        });
+        td.classList.add("selected-td");
+        selectedTd = td;
+        openCommentPopup(motor, pos);
+        inforMode = false;
     }
 });
