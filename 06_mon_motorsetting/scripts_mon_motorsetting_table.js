@@ -351,8 +351,8 @@ function createMotorTableBody(motors, eqFilterList, visibleMotors) {
         const writeTime = motorsMap?.[1]?.[0]?.WriteTime?.split(".")[0] ?? "";
 
         // ✅ Type 표시 (foldable이면 Foldable)
-        const t = window.getEqSpecType ? window.getEqSpecType(eqName) : "phone";
-        const typeText = window.getEqSpecType ? window.getEqSpecType(eqName) : "phone";
+        const type = window.getEqSpecType ? window.getEqSpecType(eqName) : "phone";
+        const typeText = {phone: "Phone", foldable: "Foldable", watch: "Watch"}[type] ?? type;
 
         // ✅ Type 컬럼 추가
         row.innerHTML = `
