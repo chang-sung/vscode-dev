@@ -115,7 +115,9 @@ function getEqSpecType(eqNameAny)
 {
     const raw = EqNameUtils.reverse(eqNameAny);
 
-    return eqTypeMap[raw] || "phone";
+    return String(eqTypeMap[raw] ?? "phone")
+        .trim()
+        .toLowerCase() || "phone";
 }
 
 // 객체 전역 노출
