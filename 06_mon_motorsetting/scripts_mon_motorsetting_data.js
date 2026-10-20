@@ -3,7 +3,7 @@ async function loadAllMotorData() {
         showLoading(); // 페이지 단위 로딩
 
         // 병렬 요청으로 속도 개선
-        const [res1, res2, res3] = await Promise.all([
+        const [res1, res2, res3, res4] = await Promise.all([
             fetch('/api/monitor_motor_setting'),
             fetch('/api/spec'),
             fetch('/api/spec/comments'),
