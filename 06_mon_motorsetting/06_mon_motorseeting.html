@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickLoad Monitoring</title>
+    <link rel="stylesheet" href="css/100_utils/styles.css">
+    <link rel="stylesheet" href="css/100_utils/flatpickr.min.css">
+    <link rel="stylesheet" href="css/06_mon_motorsetting/styles_mon_motorsetting.css">
+    
+
+    <script src="js/100_utils/jquery.min.js"></script>
+    <script src="js/100_utils/dataTables.min.js"></script>
+    <script src="js/100_utils/echarts.min.js"></script>
+    <script src="js/100_utils/xlsx.full.min.js"></script>
+    <script src="js/100_utils/dataTable.fixedHeader.min.js"></script>
+    <script src="js/100_utils/dataTable.fixedColumns.min.js"></script>
+</head>
+
+<body>
+    <h1 class="top-container">모터 속도 모니터링</h1>
+
+    <!-- 사이드바 -->
+    <div id="sidebar-placeholder"></div>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="container">
+        <!-- 필터 버튼 영역 -->
+        <div class="menu-container">
+            <div class="group1-container">
+                <h3>설비 Unit 그룹</h3>
+                <div class="button_group">
+                    <button class="bay-group-btn" data-group="PA_LOAD">LOAD</button>
+                    <button class="bay-group-btn" data-group="DET">DET</button>
+                    <button class="bay-group-btn" data-group="SET">SET</button>
+                    <button class="bay-group-btn" data-group="SET_MMT">SET_MMT</button>
+                    <button class="bay-group-btn" data-group="ATT">ATT</button>
+                    <button class="bay-group-btn" data-group="PA_UNLOAD">UNLOAD</button>
+                    <button class="bay-group-btn" data-group="FILM">FILM</button>
+                    <button class="bay-group-btn" data-group="TH">TH</button>
+                    <button class="bay-group-btn" data-group="LIFT">LIFT</button>
+                    <button class="bay-group-btn all-groups-btn" data-group="ALL_GROUPS">전체보기</button>
+                </div>
+                
+            </div>
+
+            <div class="group2-container">
+                <h3>필터링 옵션</h3>
+
+                <div class="filter-groups-wrapper">
+                    <div class="filter_option_group1">
+                    <select id="eq-group-select">
+                        <option value="all">Shift 전체</option>
+                        <option value="a">A조</option>
+                        <option value="b">B조</option>
+                        <option value="c">C조</option>
+                        <option value="d">D조</option>
+                    </select>
+
+                    <select id="type-select">
+                        <option value="all">Type 전체</option>
+                        <option value="phone">Phone</option>
+                        <option value="foldable">Foldable</option>
+                    </select>
+
+                    <select id="eqp-select"></select>
+
+                    <div class="unit-dropdown-wrapper" style="display: none;">
+                        <div class="dropdown-select">
+                        <div class="dropdown-selected">Unit 전체</div>
+                        <ul class="dropdown-options" id="unitDropdownMenu"></ul>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div class="filter_option_group2">
+                    <label>
+                        <input type="checkbox" id="abnormal-checkbox">
+                        이상설비만 보기
+                    </label>
+                    <label>
+                        <input type="checkbox" id="outlier-checkbox">
+                        이상치만 보기
+                    </label>
+                    <label style="display: none;">
+                        <input type="checkbox" id="important-checkbox">
+                        중요축만 보기
+                    </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="group3-container">
+                <h3>모니터링</h3>
+                <div class="spec_mon_group">
+                    <!-- JS로 동적 생성 -->
+                    <!-- 전체설비 / 이상설비 / TTTM율 -->
+                </div>      
+            </div> 
+
+            <div class="group4-container">
+                <h3>추가 옵션</h3>
+                <div class="button2_group">
+                    <button id="inform-btn">Inform 등록</button>            
+                    <button id="export-excel-btn">엑셀 변환</button>
+                    <button id="toggle-spec-edit-btn">SPEC 변경</button> 
+                </div>      
+            </div> 
+        </div>
+
+
+        <!-- 메인 영역 -->
+        <div class="motor-table-wrapper"> 
+            <div id="motor-table-container" class="motor-table-container">
+
+        </div>
+    </div>
+    
+    
+    <script>
+        $(function() {
+            // sidebar.html 로드 및 초기화
+            $("#sidebar-placeholder").load("sidebar.html", function() {
+                initSidebar(); // 스크립트 초기화 함수 호출
+            });
+        });
+    </script>
+    <script>
+        document.getElementById("export-excel-btn").addEventListener("click", function () {
+            const dataTable = $("#motorTable").DataTable();
+            if (!dataTable) {
+                alert("DataTable을 찾을 수 없습니다.");
+                return;
+            }
+
+            // DataTable 내에서 HTML 테이블 생성 (모든 행 포함)
+            const exportTable = document.createElement("table");
+            exportTable.innerHTML = $("#motorTable").clone()[0].innerHTML;
+
+            const tbody = exportTable.querySelector("tbody");
+            tbody.innerHTML = "";
+
+            dataTable.rows({ search: "applied" }).every(function () {
+                const row = this.node();
+                const cloned = row.cloneNode(true);
+
+                // ✅ 각 셀에서 이모지 제거
+                cloned.querySelectorAll("td").forEach(td => {
+                    // 텍스트만 추출한 뒤 이모지 제거
+                    const cleanText = td.textContent.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, "").trim();
+                    td.innerHTML = cleanText;
+                });
+
+                tbody.appendChild(cloned);
+            });
+
+            const wb = XLSX.utils.table_to_book(exportTable, { sheet: "Motor Data" });
+            XLSX.writeFile(wb, "motor_speed_data.xlsx");
+        });
+
+        function buildCustomUnitDropdown() {
+            const container = document.getElementById("unitDropdownMenu");
+            container.innerHTML = "";
+
+            const groupNames = ["PA_LOAD", "DET", "SET", "SET_MMT", "ATT", "PA_UNLOAD", "FILM", "TH", "LIFT"];
+
+            groupNames.forEach(group => {
+                const motorsInGroup = Object.entries(motor).filter(([_, m]) => m.group === group);
+                if (motorsInGroup.length === 0) return;
+
+                const li = document.createElement("li");
+                li.textContent = group;
+
+                const subUl = document.createElement("ul");
+                motorsInGroup.forEach(([motorNum, m]) => {
+                    const subLi = document.createElement("li");
+                    subLi.textContent = `SM${motorNum}_${m.name}`;
+                    subLi.addEventListener("click", (e) => {
+                        e.stopPropagation();
+
+                        const selectedMotorText = `SM${motorNum}_${m.name}`;
+                        document.querySelector(".dropdown-selected").textContent = selectedMotorText;
+                        container.style.display = "none";
+
+                        // DataTables가 만든 진짜 스크롤 대상
+                        const scrollContainer = document.querySelector(".dataTables_scrollBody");
+
+                        const thElements = document.querySelectorAll("#motorTable thead th");
+                        let targetTh = null;
+
+                        thElements.forEach(th => {
+                            if (th.textContent.trim() === selectedMotorText) {
+                                targetTh = th;
+                            }
+                        });
+
+                        if (targetTh && scrollContainer) {
+                            const offset = targetTh.offsetLeft;
+                            scrollContainer.scrollTo({
+                                left: offset - 100,  // 약간 여유
+                                behavior: "smooth"
+                            });
+                        }
+                    });
+
+                    subUl.appendChild(subLi);
+                });
+
+                li.appendChild(subUl);
+                container.appendChild(li);
+            });
+
+            // toggle menu
+            document.querySelector(".dropdown-selected").addEventListener("click", () => {
+                container.style.display = container.style.display === "block" ? "none" : "block";
+            });
+
+            // 외부 클릭 시 닫기
+            document.addEventListener("click", function(e) {
+                if (!e.target.closest(".dropdown-select")) {
+                    container.style.display = "none";
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", buildCustomUnitDropdown);
+
+    </script>
+    <script src="js/06_mon_motorsetting/scripts_mon_motorsetting_init.js"></script>
+    <script src="js/06_mon_motorsetting/scripts_mon_motorsetting_table.js"></script>
+    <script src="js/06_mon_motorsetting/scripts_mon_motorsetting_spec.js"></script>
+    <script src="js/06_mon_motorsetting/scripts_mon_motorsetting_data.js"></script>
+    <script src="js/06_mon_motorsetting/scripts_mon_motorsetting_inform.js"></script>
+    <script src="js/06_mon_motorsetting/scripts_mon_motorsetting.js"></script> <!-- 마지막 -->
+    
+</body>
+</html>
