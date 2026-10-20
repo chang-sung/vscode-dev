@@ -81,25 +81,25 @@ function generateHighlightCells() {
         const modelUpper = motorSpecGlobal[`${motorNum}_0`]?.MODEL_upper;
         const modelLower = motorSpecGlobal[`${motorNum}_0`]?.MODEL_lower;
         if (modelUpper !== undefined && modelLower !== undefined && modelUpper !== modelLower) {
-            highlightCells.push({ key: `${motorNum}_ACC`, color:"#C0C0C0" });
+            highlightCells.push({ key: `${motorNum}_ACC`, color:"#C0C0C0"});
         }
 
         // DEC (FIX)
         const fixUpper = motorSpecGlobal[`${motorNum}_0`]?.FIX_upper;
         const fixLower = motorSpecGlobal[`${motorNum}_0`]?.FIX_lower;
         if (fixUpper !== undefined && fixLower !== undefined && fixUpper !== fixLower) {
-            highlightCells.push({ key: `${motorNum}_DEC`, color: "#C0C0C0"});
+            highlightCells.push({ key: `${motorNum}_DEC`, color:"#C0C0C0"});
         }
 
         // SPEED (각 pos별)
         const posList = m.pos ? Object.keys(m.pos) : [];
         for (const pos of posList) {
             const speedUpper = motorSpecGlobal[`${motorNum}_${pos}`]?.SPEED_upper;
-            const speedLower = motorSpecGlobal[`${motorNUm}_${pos}`]?.SPEED_lower;
+            const speedLower = motorSpecGlobal[`${motorNum}_${pos}`]?.SPEED_lower;
             if (speedUpper !== undefined && speedLower !== undefined && speedUpper !== speedLower) {
                 const posLabel = m.pos[pos]?.name;
                 if (posLabel) {
-                    highlightCells.push({ key: `${motorNum}_${posLabel}`, color: "#C0C0C0"});
+                    highlightCells.push({ key: `${motorNum}_${posLabel}`, color:"#C0C0C0"});
                 }
             }
         }
