@@ -7,11 +7,6 @@ namespace log_parser
 {
     public partial class Form1 : Form
     {
-        private string connectionString =
-            "Server=127.0.0.1;Port=3306;Database=plc_log;User ID=root;Password=1234;" +
-            "SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=15;Default Command Timeout=30;" +
-            "Allow User Variables=true;";
-
         private NotifyIcon notifyIcon;
         private readonly PartsImportRunner importRunner;
 
@@ -19,7 +14,7 @@ namespace log_parser
         {
             InitializeComponent();
 
-            var settings = new ParserSettings(connectionString);
+            var settings = new ParserSettings();
             Logger.Initialize(settings.LogDirectory, settings.StatusUpdateLogDirectory);
 
             var stock = new StockService(settings.ConnectionString);

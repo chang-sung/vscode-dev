@@ -4,12 +4,10 @@ namespace log_parser
 {
     internal sealed class ParserSettings
     {
-        public string ConnectionString { get; }
-
-        public ParserSettings(string connectionString)
-        {
-            ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-        }
+        public string ConnectionString { get; } = 
+            "Server=127.0.0.1;Port=3306;Database=plc_log;User ID=root;Password=1234;" +
+            "SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=15;Default Command Timeout=30;" +
+            "Allow User Variables=true;";
 
         public readonly string LogDirectory = @"D:\25_Project\02_C#\00_Parts_Log_Parser\EMS_Log\Logs";
         public readonly string StatusUpdateLogDirectory = @"D:\25_Project\02_C#\00_Parts_Log_Parser\EMS_Log\Logs\Logs_Purchase_Status_Update";
