@@ -6,7 +6,7 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
         return;
     }
 
-    const w = 550, h = 470;
+    const w = 680, h = 720;
     const left = Math.max(0, (window.screenX || window.screenLeft || 0) + 60);
     const top  = Math.max(0, (window.screenY || window.screenTop || 0) + 60);
 
@@ -44,7 +44,7 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
         <link rel="stylesheet" href="/css/01_parts/styles_parts.css">
         <link rel="stylesheet" href="/css/01_parts/styles_parts_popup.css">
     </head>
-    <body>
+    <body class="parts-popup">
         <div class="purchase-popup-warpper">
             <div class="header">
                 <div class="title">파츠 구매 요청</div>
@@ -55,7 +55,7 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
                 <div class="popup-container-1">
                     
                     <div class ="popup-inner-1">
-                        <label>공정 구분</label>
+                        <label for="purchase-popup-eqp">공정 구분</label>
                         <select id="purchase-popup-eqp">
                             <option ${def.EQP_Div==='A3 PLM'?'selected':''} value="A3 PLM">A3 PLM</option>
                             <!-- <option ${def.EQP_Div==='A3 CLC'?'selected':''} value="A3 CLC">A3 CLC</option> -->
@@ -64,7 +64,7 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
                     </div>
 
                     <div class ="popup-inner-2">
-                        <label>SITE</label>
+                        <label for="purchase-popup-site">SITE</label>
                         <select id="purchase-popup-site">
                             <option ${def.Site==='P1DD'?'selected':''} value="P1DD">P1DD</option>
                             <option ${def.Site==='P1DJ'?'selected':''} value="P1DJ">P1DJ</option>
@@ -72,7 +72,7 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
                     </div>
                     
                     <div class ="popup-inner-3">
-                        <label>Q-Code / MRO-Code</label>
+                        <label for="purchase-popup-qcode">Q-Code / MRO-Code</label>
                         <div class ="popup-inner3-wrapper">
                             <input id="purchase-popup-qcode" type="text" value="${def.Q_Code}" placeholder="예) Q123-123456">
                             <button id="purchase-popup-qcode-check" type="button" class="purchase-popup-btn" style="margin-left:8px;">확인</button>
@@ -90,13 +90,13 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
 
                 <div class="popup-container-3">
                     <div class ="popup-inner-4">
-                        <label>파츠 분류</label>
+                        <label for="purchase-popup-parts">파츠 분류</label>
                         <input id="purchase-popup-parts" type="text" value="${def.Parts_Div}" placeholder="예) 볼스크류">
                         
                     </div>
 
                     <div class ="popup-inner-6">
-                        <label>업체P/N</label>
+                        <label for="purchase-popup-pn">업체P/N</label>
                         <input id="purchase-popup-pn" type="text" value="${def.P_N}" placeholder="예) RC-105-X30SS ST.900">
                     </div>
                 </div>
@@ -104,17 +104,17 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
                 <div class="popup-container-4">
 
                     <div class ="popup-inner-7">
-                        <label>요청 수량</label>
+                        <label for="purchase-popup-qty">요청 수량</label>
                         <input id="purchase-popup-qty" type="number" min="1" step="1" value="${def.Req_Qty}">
                     </div>
 
                     <div class ="popup-inner-8">
-                        <label>단가</label>
+                        <label for="purchase-popup-unit-price">단가</label>
                         <input id="purchase-popup-unit-price" type="text" value="${def.Unit_Price}">
                     </div>
 
                     <div class ="popup-inner-9">
-                        <label>금액</label>
+                        <label for="purchase-popup-total-price">금액</label>
                         <input id="purchase-popup-total-price" type="text" value="${def.Total_Price}">
                     </div>
 
@@ -122,7 +122,7 @@ function openPurchaseRequestWindow(defaults = {}, onSubmitted) {
                 
                 <div class="popup-container-5">
                     <div class ="popup-inner-10">
-                        <label>요청 내용</label>
+                        <label for="purchase-popup-comment">요청 내용</label>
                         <input id="purchase-popup-comment" type="text" value="${def.Req_Comment}" placeholder="구매 사유를 입력해 주세요.">
                     </div>
                 </div>

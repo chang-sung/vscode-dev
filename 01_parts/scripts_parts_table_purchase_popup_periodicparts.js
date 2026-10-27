@@ -9,7 +9,7 @@ async function openPeriodicPartsWindow() {
             return;
         }
 
-        const w = 1200, h = 450;
+        const w = 1200, h = 600;
         const left = Math.max(0, (window.screenX || window.screenLeft || 0) + 80);
         const top  = Math.max(0, (window.screenY || window.screenTop || 0) + 80);
 
@@ -52,6 +52,7 @@ async function openPeriodicPartsWindow() {
             <html lang="ko">
             <head>
             <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
             <title>정기 구매 파츠 관리</title>
             <link rel="stylesheet" href="/css/100_utils/styles.css">
             <link rel="stylesheet" href="/css/01_parts/styles_parts.css">
@@ -139,7 +140,7 @@ async function openPeriodicPartsWindow() {
             </style>
             </head>
 
-            <body>
+            <body class="parts-popup">
             <div class="periodic-popup-title">정기 구매 파츠 관리</div>
 
             <div class="periodic-popup-wrapper">

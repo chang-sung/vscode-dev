@@ -1,308 +1,44 @@
-/* ========== Purchase Request Popup ========== */
-
-/* 전체 래퍼 */
-.purchase-popup-warpper{
-  font-family: 'Segoe UI','Pretendard',sans-serif;
-  background:#f6f8fb;
-  padding:20px 18px 18px 20px;
-  box-sizing:border-box;
-  width: 550px;            /* 좁은 화면에서 레이아웃 유지 */
-  height: 470px;
-}
-
-/* 헤더 */
-.purchase-popup-warpper .header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:12px;
-}
-.purchase-popup-warpper .title{
-  font-size:18px;
-  font-weight:600;
-}
-.purchase-popup-warpper .hint{
-  font-size:12px;
-  color:#6b7280;
-}
-
-/* 카드(컨테이너) */
-.purchase-popup-container{
-  background:#fff;
-  border-radius:5px;
-  box-shadow:0 8px 20px rgba(0,0,0,.08);
-  padding:15px;
-  box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-/* 가로 한 줄 섹션(1,2,3) */
-.popup-container-1,
-.popup-container-2,
-.popup-container-3,
-.popup-container-4,
-.popup-container-5{
-    display: flex;              /* ← 가로 플렉스 */
-    flex-direction: row;        /* 안전하게 가로 방향 고정 */
-    align-items: flex-start;
-    gap: 12px;
-    box-sizing: border-box;
-}
-
-.popup-container-2{
-  height: 40px;
-}
-
-.purchase-popup-container label{
-    position: relative;      /* 파란 바 위치 기준 */
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding-left: 0px;       /* 4px 바 + 5px 여백 */
-    font-size: 14px;
-    font-weight:600;
-    line-height: 18px;       /* 캡션 높이 고정 → 밑변 정렬 안정 */
-    margin: 2px 0 8px 3px;   /* 요청한 외곽 여백 */
-}
-
-.popup-inner-1{ width: 100px; }   /* 설비 구분 */
-.popup-inner-2{ width: 100px; }   /* 설비 구분 */
-.popup-inner-3{ width: auto; }   /* Q-Code */
-.popup-inner-4{ width: 100px; }   /* 파츠 분류 */
-.popup-inner-5{ width: 250px; }   /* Unit */
-.popup-inner-6{ width: 292px; }   /* 업체P/N */
-.popup-inner-7{ width: 100px;  }   /* 신청 수량 */
-.popup-inner-8{ width: 140px; }   /* 단가 */
-.popup-inner-9{ width: 140px; }   /* 금액 */
-.popup-inner-10{ width: 404px; }   /* 요청 내용 */
-
-
-/* Q-Code 영역: 라벨 한 줄 + (인풋 | 버튼) 한 줄 가로배치 */
-/* Q-Code / MRO-Code 입력 + 버튼 + 힌트 한 줄 정렬 */
-.popup-inner3-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* input: 고정폭 + 음수 마진 제거 */
-.popup-inner3-wrapper > #purchase-popup-qcode {
-  width: 180px !important;   /* 필요시 150~220px로 조정 */
-  height: 30px;
-  padding: 0 10px;
-  margin: 0 !important;      /* 기존 -20px 제거 */
+/* Purchase request window. Shared design tokens: styles_parts.css. */
+body.parts-popup { padding: 24px; }
+.parts-popup .purchase-popup-warpper {
   box-sizing: border-box;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: 0 auto;
+  padding: 0;
+  font-family: var(--parts-font);
+  background: var(--parts-canvas);
 }
-
-/* 버튼: 고정폭 */
-.popup-inner3-wrapper > #purchase-popup-qcode-check {
-  width: 64px;               /* 필요시 60~80px로 조정 */
-  height: 30px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.parts-popup .purchase-popup-warpper .header { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 24px; }
+.parts-popup .purchase-popup-warpper .title { font-family: var(--parts-display-font); font-size: 28px; font-weight: 600; line-height: 1.19; }
+.parts-popup .hint { font-size: 12px; color: var(--parts-muted); }
+.parts-popup .purchase-popup-container { display: flex; flex-direction: column; gap: 20px; padding: 24px; border: 1px solid var(--parts-line); border-radius: var(--parts-radius); background: var(--parts-white); box-shadow: none; }
+.parts-popup :is(.popup-container-1, .popup-container-3, .popup-container-4, .popup-container-5) { display: grid; gap: 16px; min-width: 0; }
+.parts-popup .popup-container-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.parts-popup .popup-container-1 .popup-inner-3 { grid-column: 1 / -1; }
+.parts-popup .popup-container-2 { min-height: 18px; margin-top: -12px; }
+.parts-popup .popup-container-2 > label { display: none; }
+.parts-popup .popup-container-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.parts-popup .popup-container-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.parts-popup .popup-container-5 { grid-template-columns: minmax(0, 1fr); }
+.parts-popup .purchase-popup-container [class^="popup-inner-"] { width: auto; min-width: 0; }
+.parts-popup .purchase-popup-container label { display: block; margin: 0 0 8px; padding: 0; font-size: 14px; font-weight: 600; line-height: 1.43; }
+.parts-popup .purchase-popup-container :is(input, select) { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--parts-line); border-radius: var(--parts-control-radius); color: var(--parts-ink); background: var(--parts-white); font: 400 14px/1.47 var(--parts-font); }
+.parts-popup .purchase-popup-container input[readonly] { background: var(--parts-pearl); }
+.parts-popup .popup-inner3-wrapper { display: flex; align-items: center; gap: 8px; }
+.parts-popup #purchase-popup-qcode { flex: 1; }
+.parts-popup #purchase-popup-qcode-check { flex-shrink: 0; margin: 0 !important; }
+.parts-popup #purchase-popup-qcode-hint { white-space: normal; overflow-wrap: anywhere; color: var(--parts-muted); font-size: 12px !important; }
+.parts-popup .purchase-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.parts-popup .purchase-actions button { min-width: 88px; }
+.parts-popup .loading { display: none; position: fixed; inset: 0; align-items: center; justify-content: center; background: rgb(245 245 247 / 80%); z-index: 9999; }
+.parts-popup .loading.show { display: flex; }
+.parts-popup .spinner { width: 40px; height: 40px; border: 4px solid var(--parts-line); border-top-color: var(--parts-blue); border-radius: 50%; animation: parts-spin .9s linear infinite; }
+@keyframes parts-spin { to { transform: rotate(360deg); } }
+@media (max-width: 480px) {
+  body.parts-popup { padding: 16px; }
+  .parts-popup .purchase-popup-container { padding: 16px; }
+  .parts-popup :is(.popup-container-3, .popup-container-4) { grid-template-columns: minmax(0, 1fr); }
 }
-.popup-inner3-wrapper > #purchase-popup-qcode-check:hover {
-  background-color: #0056b3;
-}
-
-/* hint: 한 줄 유지 + 같은 줄 배치 */
-#purchase-popup-qcode-hint {
-  display: inline;          /* 한 줄로 표시 */
-  white-space: nowrap;      /* 자동 줄바꿈 방지 */
-  font-size: 12px;
-  color: #666;
-  margin: 0 0 0 4px !important;
-}
-
-
-/* 입력 컨트롤 공통 */
-
-#purchase-popup-site{
-    width: 100%;
-    height: 30px;       /* ✅ 높이도 조정 */
-    font-size: 14px;    /* ✅ 글자 크기 */
-    border: 1px solid #aaa;
-    border-radius: 5px;
-    text-align: center;              /* 기본 */
-}
-
-#purchase-popup-eqp{
-    width: 100%;
-    height: 30px;       /* ✅ 높이도 조정 */
-    font-size: 14px;    /* ✅ 글자 크기 */
-    border: 1px solid #aaa;
-    border-radius: 5px;
-    text-align: center;              /* 기본 */
-}
-
-#purchase-popup-qcode{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    margin-bottom: -20px !important;
-}
-
-#purchase-popup-parts{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-
-}
-
-#purchase-popup-unit{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-
-}
-
-#purchase-popup-pn{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-  
-}
-
-#purchase-popup-qty{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    text-align: center; 
-  
-}
-
-#purchase-popup-unit-price{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    text-align: center; 
-  
-}
-
-#purchase-popup-total-price{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    text-align: center; 
-  
-}
-
-#purchase-popup-comment{
-    width: 100%;
-    height: 30px !important;           /* ✅ 높이 줄임 */
-    font-size: 14px;           /* 글자 크기도 줄이기 */
-    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-  
-}
-
-/* 버튼 영역 */
-.purchase-actions{
-  display:flex;
-  gap:8px;
-  justify-content:flex-end;
-  margin-top:16px;
-  position: static !important;    /* 혹시 전역 .actions 충돌 대비 */
-}
-
-.purchase-popup-btn {
-  height: 35px;
-  padding: 6px 18px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  background: #fff;
-  color: #333;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-
-#purchase-popup-btn-submit {
-  background: #1363df;
-  border-color: #1363df;
-  color: #fff;
-}
-
-.purchase-popup-btn:hover {
-  background: #f5f4f4a1;
-}
-
-#purchase-popup-btn-submit:hover {
-  background: #0056b3;
-}
-
-
-/* 로딩 오버레이 */
-.loading{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(255,255,255,.5);
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-.loading.show{ display:flex; }
-
-.spinner{
-  width:40px;
-  height:40px;
-  border:4px solid #e5e7eb;
-  border-top-color:#1363df;
-  border-radius:50%;
-  animation:spin .9s linear infinite;
-}
-
-
-@keyframes spin { to { transform:rotate(360deg); } }
-
-/* 반응형(아주 좁은 화면에서 필드 폭 축소) */
-@media (max-width: 1200px){
-  .purchase-popup-container label{ flex-basis: 200px; }
-  .purchase-popup-container label.row-span-2{ min-width: 340px; }
-}
-@media (max-width: 1024px){
-  .purchase-popup-container label{ flex-basis: 180px; }
-  .purchase-popup-container label.row-span-2{ min-width: 300px; }
-}
+@media (prefers-reduced-motion: reduce) { .parts-popup .spinner { animation: none; } }
