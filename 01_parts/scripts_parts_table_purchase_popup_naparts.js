@@ -11,7 +11,7 @@ async function openNaPartsWindow() {
             return;
         }
 
-        const w = 1180, h = 450;
+        const w = 1180, h = 600;
         const left = Math.max(0, (window.screenX || window.screenLeft || 0) + 80);
         const top  = Math.max(0, (window.screenY || window.screenTop || 0) + 80);
 
@@ -188,7 +188,7 @@ async function openNaPartsWindow() {
     </style>
 
 </head>
-<body>
+<body class="parts-popup">
     <div class="na-popup-title">구매 불가 파츠 관리</div>
     <div class="na-popup-wrapper">
         <div class="edit-btn-wrapper" id="na-edit-tools" style="display:none;">

@@ -1720,3 +1720,390 @@ td.po-reject-cell .po-reject-text {
   max-width: 100%;
   vertical-align: middle;
 }
+/* ========================================================================
+   Apple-inspired parts workspace — design/DESIGN-apple.md
+   Scoped to this page and its popup windows; shared navigation is untouched.
+   Status tints remain semantic data signals, rather than action colors.
+   ======================================================================== */
+:root {
+  --parts-blue: #0066cc;
+  --parts-focus: #0071e3;
+  --parts-ink: #1d1d1f;
+  --parts-muted: #6e6e73;
+  --parts-disabled: #7a7a7a;
+  --parts-white: #ffffff;
+  --parts-canvas: #f5f5f7;
+  --parts-pearl: #fafafc;
+  --parts-line: #e0e0e0;
+  --parts-soft-line: #f0f0f0;
+  --parts-selected: #eaf3fc;
+  --parts-wait: #fff8e8;
+  --parts-drop: #fceff0;
+  --parts-done: #eff7f0;
+  --parts-arrived: #f5f5f7;
+  --parts-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  --parts-display-font: 'SF Pro Display', var(--parts-font);
+  --parts-radius: 18px;
+  --parts-control-radius: 8px;
+  --parts-sidebar-space: 72px;
+}
+html:has(body.parts-app), html:has(body.parts-popup) { overflow: auto; }
+body:is(.parts-app, .parts-popup) {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  background: var(--parts-canvas);
+  color: var(--parts-ink);
+  font-family: var(--parts-font);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: -.374px;
+  --border: var(--parts-line);
+  --head1: var(--parts-canvas);
+  --head2: var(--parts-pearl);
+  --hover: var(--parts-pearl);
+  --sel: var(--parts-selected);
+}
+:is(.parts-app, .parts-popup) :is(button, input, select, textarea) {
+  font-family: inherit;
+  box-sizing: border-box;
+}
+:is(.parts-app, .parts-popup) :is(button, a, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--parts-focus);
+  outline-offset: 3px;
+}
+:is(.parts-app, .parts-popup) a { color: var(--parts-blue); }
+body.parts-app > .top-container {
+  position: relative;
+  inset: auto;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  padding: 0 24px 0 calc(var(--parts-sidebar-space) + 24px);
+  background: #000000;
+  color: var(--parts-white);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -.12px;
+}
+body.parts-app > .container {
+  display: block;
+  position: relative;
+  inset: auto;
+  box-sizing: border-box;
+  width: calc(100% - var(--parts-sidebar-space));
+  max-width: 1488px;
+  margin: 0 auto 0 max(var(--parts-sidebar-space), calc((100% - 1440px) / 2));
+  padding: 40px 24px 48px;
+  background: transparent;
+}
+.parts-app .parts-page-header { margin-bottom: 32px; }
+.parts-app .parts-eyebrow {
+  margin: 0 0 8px;
+  color: var(--parts-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
+.parts-app .parts-page-header h2 {
+  margin: 0 0 12px;
+  color: var(--parts-ink);
+  font-family: var(--parts-display-font);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.374px;
+}
+.parts-app .parts-page-description { margin: 0; color: var(--parts-muted); }
+body.parts-app .menu-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
+  margin: 0 0 32px;
+}
+.parts-app .menu-container > :is(nav, div) {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--parts-line);
+  border-radius: var(--parts-radius);
+  background: var(--parts-white);
+  box-sizing: border-box;
+}
+.parts-app .menu-container > .group1-container {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--parts-line);
+  border-radius: 0;
+  background: transparent;
+}
+.parts-app .menu-container h3 {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  color: var(--parts-muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.43;
+}
+.parts-app .group1-container h3 {
+  margin: 0 16px 0 0;
+  color: var(--parts-ink);
+}
+.parts-app .menu-container .button_group {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+.parts-app .group4-container .row-2 { margin-top: 8px; }
+.parts-app .menu-container :is(.group2-inner-1, .group2-inner-2) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+.parts-app .menu-container .group2-inner-2 { margin-top: 12px; }
+.parts-app :is(.history-filter-container, .quality-history-filter-container) { flex-direction: column; }
+.parts-app .filter_search_combined {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+body.parts-app #parts-main .group2-container :is(input:not([type="hidden"]), select, .msel-toggle, .history-parts-toggle),
+.parts-app #purchase-date-range {
+  height: 44px !important;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 12px !important;
+  border: 1px solid var(--parts-line);
+  border-radius: var(--parts-control-radius);
+  background: var(--parts-white);
+  color: var(--parts-ink);
+  font-size: 14px;
+  font-weight: 400;
+  box-shadow: none;
+}
+.parts-app .group2-container .filter_search_combined select { flex: 0 1 112px; }
+.parts-app .group2-container .filter_search_combined input { flex: 1 1 100px; width: 100%; border-radius: 9999px; }
+.parts-app #purchase-date-range { width: 248px; border-radius: 9999px; }
+.parts-app :is(#purchase-status-multiselect, #history-parts-multiselect) { width: 130px; margin: 0; }
+.parts-app :is(.msel-toggle, .history-parts-toggle) { width: 100%; }
+.parts-app :is(.msel-panel, .history-parts-panel) {
+  top: calc(100% + 8px);
+  padding: 8px;
+  border: 1px solid var(--parts-line);
+  border-radius: 11px;
+  background: var(--parts-white);
+  box-shadow: none;
+  z-index: 120;
+}
+.parts-app :is(.msel-row, .history-parts-row) { min-height: 36px; color: var(--parts-ink); font-size: 14px; }
+.parts-app :is(.msel-row, .history-parts-row) input { accent-color: var(--parts-blue); }
+body:is(.parts-app, .parts-popup) :is(.edit-group-btn, .search-btn, .bay-group-btn, .purchase-popup-btn),
+.parts-popup #purchase-popup-qcode-check {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: auto;
+  min-height: 44px;
+  height: auto;
+  margin: 0;
+  padding: 10px 16px;
+  border: 1px solid var(--parts-line);
+  border-radius: 9999px;
+  background: var(--parts-white);
+  color: var(--parts-blue);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  white-space: nowrap;
+  box-shadow: none;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+body:is(.parts-app, .parts-popup) :is(.edit-group-btn, .search-btn, .bay-group-btn, .purchase-popup-btn):active,
+.parts-popup #purchase-popup-qcode-check:active { transform: scale(.95); }
+body.parts-app .group1-container .bay-group-btn { padding: 10px 20px; border-color: transparent; color: var(--parts-ink); background: transparent; }
+body.parts-app .group1-container .bay-group-btn:is(.active, [aria-current="page"]),
+body.parts-app :is(.search-btn, #parts-purchase-btn, .edit-group-btn.active, #parts-purchase-btn-approve),
+body.parts-popup :is(#purchase-popup-btn-submit, #purchase-popup-qcode-check, .edit-group-btn.active) {
+  border-color: var(--parts-blue);
+  background: var(--parts-blue);
+  color: var(--parts-white);
+  box-shadow: none;
+}
+body.parts-app #parts-purchase-btn-reject { border-color: var(--parts-line); background: var(--parts-white); color: var(--parts-ink); }
+body:is(.parts-app, .parts-popup) button:disabled {
+  background: var(--parts-canvas);
+  color: var(--parts-disabled);
+  border-color: var(--parts-line);
+  cursor: not-allowed;
+  transform: none;
+}
+.parts-app .summary-cards { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+body.parts-app .summary-card {
+  flex: 1 1 60px;
+  width: auto;
+  min-height: 76px;
+  padding: 12px 6px;
+  border: 1px solid var(--parts-line);
+  border-radius: 11px;
+  background: var(--parts-pearl);
+  box-shadow: none;
+  transform: none;
+  cursor: pointer;
+}
+.parts-app .summary-card::before { display: none; }
+.parts-app .summary-card .label { font-size: 12px; font-weight: 400; color: var(--parts-muted); white-space: nowrap; }
+.parts-app .summary-card .value { font-size: 28px; font-weight: 600; color: var(--parts-ink); }
+body.parts-app .summary-card.active { border-color: var(--parts-blue) !important; background: var(--parts-selected); box-shadow: none; }
+.parts-app .summary-card.active .value { color: var(--parts-blue); }
+.parts-app .main-wrapper { width: 100%; min-width: 0; margin: 0; }
+.parts-app .main-wrapper > div {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--parts-line);
+  border-radius: var(--parts-radius);
+  background: var(--parts-white);
+}
+.parts-app .main-wrapper h2 { margin: 0 0 20px; font-size: 24px; font-weight: 600; letter-spacing: -.374px; }
+.parts-app .update-time { position: static; float: none; margin: -12px 0 20px; color: var(--parts-muted); font-size: 12px; }
+body.parts-app .main-wrapper :is(.essential-parts-container, .line-parts-container, .parts-purchase-container, .parts-history-container, .quality-history-container) {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+body:is(.parts-app, .parts-popup) .edit-btn-wrapper { width: 100%; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.parts-app :is(.edit-btn-container, .edit-btn-container-2, .edit-btn-container-3, .edit-btn-container-4) { flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; border: 0; }
+.parts-app .edit-btn-container-4 { margin-right: auto; }
+.parts-app .step-tip { cursor: help; }
+.parts-app .quality-history-top-wrapper { flex-wrap: wrap; gap: 16px; }
+.parts-app .quality-history-guide img { max-width: 100%; border-color: var(--parts-line); border-radius: 8px; }
+/* Keep the 799px image and pixel-positioned shelf overlays together. */
+.parts-app .parts-search-container { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: 100%; height: auto; gap: 24px; }
+.parts-app :is(.parts-search-image-wrapper, .parts-search-table) { width: auto; min-width: 0; height: auto; padding: 0; border: 0; background: var(--parts-white); overflow: auto; }
+.parts-app .parts-image { border-color: var(--parts-line); border-radius: 8px; }
+.parts-app .highlight-box { border-color: var(--parts-blue); background: rgb(0 102 204 / 12%); }
+.parts-app .highlight-box.active { outline: 2px solid var(--parts-focus); background: rgb(0 102 204 / 24%); }
+/* Neutral table chrome. Sticky column offsets/column widths stay in the base. */
+body.parts-app .main-wrapper table,
+body.parts-popup table { color: var(--parts-ink); border: 0; font-variant-numeric: tabular-nums; }
+body.parts-app .main-wrapper table :is(th, td),
+body.parts-popup table :is(th, td) {
+  border: 0 !important;
+  border-bottom: 1px solid var(--parts-soft-line) !important;
+  box-shadow: none !important;
+  font-size: 14px;
+  line-height: 1.47;
+}
+body.parts-app .main-wrapper table thead th,
+body.parts-popup table thead th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: var(--parts-canvas) !important;
+  color: var(--parts-muted);
+  font-weight: 600;
+  border-bottom-color: var(--parts-line) !important;
+}
+body.parts-app .main-wrapper table tbody td,
+body.parts-popup table tbody td { padding-top: 10px; padding-bottom: 10px; }
+body.parts-app .main-wrapper table tbody tr.selected > td,
+body.parts-popup table tbody tr.selected > td { background: var(--parts-selected) !important; color: var(--parts-ink); }
+body.parts-app .main-wrapper .purchase-mgmt-table tbody tr.st-wait > td { background: var(--parts-wait) !important; }
+body.parts-app .main-wrapper .purchase-mgmt-table tbody tr.st-drop > td { background: var(--parts-drop) !important; }
+body.parts-app .main-wrapper .purchase-mgmt-table tbody tr.st-done > td { background: var(--parts-done) !important; }
+body.parts-app .main-wrapper .purchase-mgmt-table tbody tr.st-arrived > td { background: var(--parts-arrived) !important; }
+body.parts-app .main-wrapper .purchase-mgmt-table tbody tr.selected > td { background: var(--parts-selected) !important; }
+body.parts-app .main-wrapper .purchase-mgmt-table tbody tr.selected > td:first-child { border-left: 2px solid var(--parts-blue) !important; }
+body.parts-app .main-wrapper table :is(.catg-EMS, .catg-SAP, .catg-MRO, .catg-STG, .catg-CONTRACT, .catg-NUMBERING) :is(.dt-ellipsis, .p-edit) { color: var(--parts-ink); font-weight: 600; }
+:is(.parts-app, .parts-popup) :is(.dt-input, .dt-select, .p-edit, .na-input, .periodic-input) { border: 1px solid var(--parts-line); border-radius: 5px; color: var(--parts-ink); background: var(--parts-white); }
+:is(.parts-app, .parts-popup) :is(.dt-info, .dataTables_info, .dt-paging, .dataTables_paginate) { padding-top: 12px; color: var(--parts-muted); font-size: 12px; }
+:is(.parts-app, .parts-popup) :is(.dt-paging-button, .paginate_button) { border-radius: 8px; }
+.parts-app #user-name-display { position: absolute; top: 12px; right: 24px; color: var(--parts-white); font-size: 12px; }
+.parts-app #loading-overlay { background: rgb(245 245 247 / 80%); }
+.parts-app .loading-spinner { border-color: var(--parts-line); border-top-color: var(--parts-blue); }
+/* Calendar is attached to body by flatpickr. */
+.parts-app .flatpickr-calendar { border: 1px solid var(--parts-line); border-radius: 11px; box-shadow: none; font-family: var(--parts-font); }
+.parts-app .flatpickr-day:is(.selected, .startRange, .endRange) { background: var(--parts-blue); border-color: var(--parts-blue); }
+/* Separate popup documents share the same tokens and controls. */
+body.parts-popup { display: block; height: auto; min-height: 100vh; padding: 24px; box-sizing: border-box; }
+.parts-popup :is(.na-popup-title, .periodic-popup-title, .manager-popup-title) { margin: 0 0 24px; font-family: var(--parts-display-font); font-size: 28px; font-weight: 600; line-height: 1.19; }
+.parts-popup :is(.na-popup-wrapper, .periodic-popup-wrapper, .manager-popup-wrapper) { box-sizing: border-box; width: 100%; padding: 24px; border: 1px solid var(--parts-line); border-radius: var(--parts-radius); background: var(--parts-white); box-shadow: none; overflow-x: auto; }
+.parts-popup .mgr-sections-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.parts-popup .mgr-section { min-width: 0; overflow-x: auto; }
+.parts-popup .mgr-section-title { margin-bottom: 12px; font-size: 17px; font-weight: 600; }
+@media (max-width: 1200px) {
+  body.parts-app .menu-container { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .parts-app .menu-container > .group4-container { grid-column: 1 / -1; }
+  .parts-app .group4-container { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .parts-app .group4-container h3 { margin: 0 12px 0 0; }
+  .parts-app .group4-container .row-2 { margin: 0; }
+  .parts-app .parts-search-container { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 833px) {
+  body.parts-app > .container { padding: 24px 16px 32px; }
+  body.parts-app .menu-container { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 24px; }
+  .parts-app .menu-container > .group4-container { grid-column: auto; }
+  .parts-app .group1-container h3 { flex-basis: 100%; margin-bottom: 4px; }
+  .parts-app .parts-page-header h2 { font-size: 34px; }
+  .parts-app .main-wrapper > div { padding: 16px; }
+  .parts-app .edit-btn-container-4 { flex-basis: 100%; }
+}
+@media (max-width: 480px) {
+  body.parts-app { --parts-sidebar-space: 48px; }
+  .parts-app .parts-page-header h2 { font-size: 28px; }
+  .parts-app .parts-page-description { font-size: 14px; }
+  .parts-app .menu-container > :is(nav, div) { padding: 16px; }
+  .parts-app .menu-container > .group1-container { padding: 0 0 12px; }
+  body.parts-app .group1-container .bay-group-btn { padding: 10px 12px; }
+  body.parts-popup { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.parts-app, .parts-popup) *, :is(.parts-app, .parts-popup) *::before, :is(.parts-app, .parts-popup) *::after { transition: none !important; animation: none !important; }
+}
+.parts-app .edit-btn-container-4 .purchase-status-shortcut {
+  min-height: 44px;
+  width: auto;
+  height: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--parts-line);
+  border-radius: 9999px;
+  background: var(--parts-pearl);
+  color: var(--parts-muted);
+  font-size: 12px;
+  font-weight: 400;
+  box-shadow: none;
+  cursor: pointer;
+}
+.parts-app .edit-btn-container-4 .purchase-status-shortcut.active {
+  border-color: var(--parts-blue);
+  color: var(--parts-blue);
+  background: var(--parts-selected);
+}
+.parts-app .purchase-status-shortcut:active { transform: scale(.95); }
+
+body.parts-app #parts-main .search-btn { min-width: 60px; min-height: 44px; height: 44px !important; padding: 10px 16px !important; line-height: 1.43 !important; flex-shrink: 0; }
+
+@media (max-width: 640px) { .parts-popup .mgr-sections-row { grid-template-columns: minmax(0, 1fr); } }
