@@ -770,3 +770,35 @@ td.spec-editable.spec-selected {
 .motor-table tbody tr.selected td.write-time {
   background-color: #cce5ff !important;
 }
+
+
+/* 세 컬럼을 같은 sticky 방식으로 고정한다. EQ_Name의 기존 left:0을 덮어쓴다. */
+.motor-table .type-col,
+.motor-table .eq-name,
+.motor-table .write-time {
+  position: sticky !important;
+  z-index: 2;
+}
+
+.motor-table .type-col {
+  left: 0 !important;
+}
+
+.motor-table .eq-name {
+  left: var(--motor-type-width, 96px) !important;
+}
+
+.motor-table .write-time {
+  left: calc(var(--motor-type-width, 96px) + var(--motor-eq-width, 96px)) !important;
+}
+
+.motor-table thead th.type-col,
+.motor-table thead th.eq-name,
+.motor-table thead th.write-time {
+  z-index: 3;
+  background-color: #f0f0f0;
+}
+
+.motor-table thead th.spec-title-cell.write-time {
+  background-color: #ffff99;
+}
