@@ -210,7 +210,7 @@ function createMotorTableHeader(motors, visibleMotors) {
         headerRow.innerHTML = `
         <th class="type-col">Type</th>
         <th class="eq-name">EQ_Name</th>
-        <th>WriteTime</th>
+        <th class="write-time">WriteTime</th>
         <th class="remark-header">비고</th>
         `;
         thead.appendChild(headerRow);
@@ -251,7 +251,7 @@ function createMotorTableHeader(motors, visibleMotors) {
     motorHeaderRow.innerHTML = `
         <th class="type-col" rowspan="4">Type</th>
         <th class="eq-name" rowspan="4">EQ_Name</th>
-        <th rowspan="2">WriteTime</th>
+        <th class="write-time" rowspan="2">WriteTime</th>
     `;
 
     motors.forEach(([motorNum, m]) => {
@@ -296,7 +296,7 @@ function createMotorTableHeader(motors, visibleMotors) {
 
     // ✅ P행 맨 앞에만 라벨 셀(rowspan=2) - thead이므로 th 사용
     specRowP.innerHTML = `
-        <th class="spec-title-cell" rowspan="2">
+        <th class="spec-title-cell write-time" rowspan="2">
         <div class="spec-cell-inner">
             <div class="spec-label-left">SPEC</div>
             <div class="spec-label-right">
@@ -358,7 +358,7 @@ function createMotorTableBody(motors, eqFilterList, visibleMotors) {
         row.innerHTML = `
         <td class="type-col">${typeText}</td>
         <td class="eq-name">${displayEqName}</td>
-        <td>${writeTime}</td>
+        <td class="write-time">${writeTime}</td>
         `;
 
         motors.forEach(([motorNum, m]) => {
@@ -458,6 +458,7 @@ function finalizeMotorTable(table, tbody) {
             paging: false,
             searching: false,
             fixedHeader: true,
+            fixedColumns: { leftColumns: 3 },
             columnDefs: [
                 { orderable: false, targets: 'no-sort' } // ✅ 추가
             ]
