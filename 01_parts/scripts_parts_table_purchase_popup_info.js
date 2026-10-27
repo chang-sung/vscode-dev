@@ -6,7 +6,7 @@ function openManagerInfoWindow() {
         return;
     }
 
-    const w = 800, h = 600;
+    const w = 800, h = 320;
     const left = Math.max(0, (window.screenX || window.screenLeft || 0) + 60);
     const top  = Math.max(0, (window.screenY || window.screenTop || 0) + 60);
 
@@ -120,7 +120,7 @@ function openManagerInfoWindow() {
 
             </style>
         </head>
-        <body class="parts-popup">
+        <body>
             <div class="manager-popup-title">구매 담당자 및 합의자 정보</div>
             <div class="manager-popup-wrapper">
                 

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>파츠 관리 | 설비 관리 시스템</title>
+    <title>PLM Web Monitoring System</title>
     <link rel="stylesheet" href="css/100_utils/styles.css">
     <link rel="stylesheet" href="css/100_utils/flatpickr.min.css">
     <link rel="stylesheet" href="css/01_parts/styles_parts.css">
@@ -19,7 +19,7 @@
     <script src="js/100_utils/Sortable.min.js"></script> 
 </head>
 
-<body class="parts-app">
+<body>
     <h1 class="top-container">설비 관리 시스템</h1>
 
     <!-- 사이드바 -->
@@ -28,16 +28,11 @@
         <div class="loading-spinner"></div>
     </div>
 
-    <main class="container" id="parts-main">
-        <header class="parts-page-header">
-            <p class="parts-eyebrow">PARTS MANAGEMENT</p>
-            <h2>파츠 관리</h2>
-            <p class="parts-page-description">구매부터 재고, 설비 수리와 품질 이력까지.</p>
-        </header>
+    <div class="container">
         <!-- 필터 버튼 영역 -->
         <div class="menu-container">
-            <nav class="group1-container" aria-label="파츠 업무">
-                <h3>업무 선택</h3>
+            <div class="group1-container">
+                <h3>상세 조회</h3>
 
                 <div class="button_group row-1">
                     <button class="bay-group-btn" id="btn-parts-purchase">파츠 구매</button>
@@ -49,7 +44,7 @@
                     <button class="bay-group-btn" id="btn-parts-history">설비 수리 이력</button>
                     <button class="bay-group-btn" id="btn-quality-history">품질 이력</button>
                 </div>
-            </nav>
+            </div>
 
             <div class="group2-container">
                 <h3>필터링 옵션</h3>
@@ -327,10 +322,18 @@
                 <div class="edit-btn-wrapper">
                     
                     <div class="edit-btn-container-4">
-                        <button type="button" class="step-tip purchase-status-shortcut" data-status="구매 요청" data-tooltip="리더 승인 필요" aria-pressed="false">구매 요청</button>
-                        <button type="button" class="step-tip purchase-status-shortcut" data-status="구매 대기" data-tooltip="구매담당자 P/O 발행 필요" aria-pressed="false">구매 대기</button>
-                        <button type="button" class="step-tip purchase-status-shortcut" data-status="구매 중" data-tooltip="주문 완료" aria-pressed="false">구매 중</button>
-                        <button type="button" class="step-tip purchase-status-shortcut" data-status="입고 완료" data-tooltip="입고 완료" aria-pressed="false">입고 완료</button>
+                        <span class="step-tip" data-tooltip="리더 승인 필요">
+                            <img src="css/01_parts/p_req.png" >
+                        </span>
+                        <span class="step-tip" data-tooltip="구매담당자 P/O 발행 필요">
+                            <img src="css/01_parts/p_wait.png" >
+                        </span>
+                        <span class="step-tip" data-tooltip="주문 완료">
+                            <img src="css/01_parts/p_done.png" >
+                        </span>
+                        <span class="step-tip" data-tooltip="입고 완료">
+                            <img src="css/01_parts/p_arrived.png" >
+                        </span>
                     </div>
                     
                     <div class="edit-btn-container-3">
@@ -400,43 +403,9 @@
         
         </div>
 
-    </main>
+    </div>
     
     <script>
-        // Appearance/accessibility only. Tab loading remains in scripts_parts.js.
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.group2-container select, .group2-container input:not([type="hidden"]), #purchase-date-range').forEach(function (el) {
-                if (!el.hasAttribute('aria-label')) {
-                    el.setAttribute('aria-label', el.tagName === 'SELECT' ? (el.options[0]?.text || '필터 선택') : (el.placeholder || '검색어'));
-                }
-            });
-            const nav = document.querySelector('.group1-container');
-            const syncNav = function () {
-                nav.querySelectorAll('button').forEach(function (button) {
-                    if (button.classList.contains('active')) button.setAttribute('aria-current', 'page');
-                    else button.removeAttribute('aria-current');
-                });
-            };
-            new MutationObserver(syncNav).observe(nav, { subtree: true, attributes: true, attributeFilter: ['class'] });
-            syncNav();
-            const summary = document.querySelector('.summary-container');
-            const syncSummary = function () {
-                summary.querySelectorAll('.summary-card').forEach(function (card) {
-                    card.setAttribute('role', 'button');
-                    card.tabIndex = 0;
-                    card.setAttribute('aria-pressed', String(card.classList.contains('active')));
-                });
-            };
-            new MutationObserver(syncSummary).observe(summary, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
-            summary.addEventListener('keydown', function (event) {
-                if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.summary-card')) {
-                    event.preventDefault();
-                    event.target.click();
-                }
-            });
-            syncSummary();
-        });
-
         $(function() {
             // sidebar.html 로드 및 초기화
             $("#sidebar-placeholder").load("sidebar.html", function() {

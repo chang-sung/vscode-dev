@@ -1552,7 +1552,7 @@ const PartsBuy = (() => {
 
         // 클릭 처리 (위임)
         box.addEventListener('click', (e) => {
-            const img = e.target?.closest?.('.purchase-status-shortcut, img');
+            const img = e.target && e.target.tagName === 'IMG' ? e.target : null;
             if (!img) return;
 
             // 1) status 판별: data-status 우선, 없으면 파일명으로
@@ -1589,14 +1589,8 @@ const PartsBuy = (() => {
             PartsBuy.searchWithFilters({ Purchase_Status: nextStatuses });
 
             // 5) 액티브 표시(선택된 아이콘 강조)
-            box.querySelectorAll('.purchase-status-shortcut, img').forEach(el => {
-                el.classList.remove('active');
-                if (el.matches('button')) el.setAttribute('aria-pressed', 'false');
-            });
-            if (nextStatuses.length === 1) {
-                img.classList.add('active');
-                if (img.matches('button')) img.setAttribute('aria-pressed', 'true');
-            }
+            box.querySelectorAll('img').forEach(el => el.classList.remove('active'));
+            if (nextStatuses.length === 1) img.classList.add('active');
         });
     }
 
