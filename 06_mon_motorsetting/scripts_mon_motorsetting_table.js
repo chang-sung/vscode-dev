@@ -434,6 +434,19 @@ function createMotorCell(rawEqName, displayEqName, motorNum, posLabel, posNum, v
     return td;
 }
 
+// DataTables는 스크롤 헤더를 별도 테이블로 복제하므로 wrapper에 offset을 공유한다.
+function syncMotorStickyColumns(table, wrapper) {
+    const row = table.tBodies[0]?.querySelector("tr");
+    const typeCell = row?.querySelector(".type-col") || table.querySelector("th.type-col");
+    const eqCell = row?.querySelector(".eq-name") || table.querySelector("th.eq-name");
+    const typeWidth = typeCell?.getBoundingClientRect().width || 0;
+    const eqWidth = eqCell?.getBoundingClientRect().width || 0;
+    if (!typeWidth || !eqWidth) return;
+
+    wrapper.style.setProperty("--motor-type-width", typeWidth + "px");
+    wrapper.style.setProperty("--motor-eq-width", eqWidth + "px");
+}
+
 function finalizeMotorTable(table, tbody) {
     const container = document.getElementById("motor-table-container");
     container.innerHTML = "";
@@ -458,7 +471,6 @@ function finalizeMotorTable(table, tbody) {
             paging: false,
             searching: false,
             fixedHeader: true,
-            fixedColumns: { leftColumns: 3 },
             columnDefs: [
                 { orderable: false, targets: 'no-sort' } // ✅ 추가
             ]
@@ -466,6 +478,12 @@ function finalizeMotorTable(table, tbody) {
     } catch (e) {
         console.error("❌ DataTable 초기화 오류:", e);
     }
+
+    const syncSticky = () => syncMotorStickyColumns(table, wrapper);
+    $(table).on("draw.dt.motorSticky column-sizing.dt.motorSticky", syncSticky);
+    $(window).off("resize.motorSticky").on("resize.motorSticky", syncSticky);
+    syncSticky();
+    requestAnimationFrame(syncSticky);
 
     // ✅ 이상치/정상 비율 렌더링
     renderEqStatus(tbody);
