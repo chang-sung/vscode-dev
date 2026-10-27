@@ -753,3 +753,20 @@ td.spec-editable.spec-selected {
   outline-offset: -2px;
   box-shadow: inset 0 0 0 2px rgba(59,130,246,0.25);
 }
+
+/* 가로 스크롤 고정 컬럼: Type / EQ_Name / WriteTime */
+.motor-table tbody td.type-col,
+.motor-table tbody td.write-time {
+  background-color: #fff;
+}
+
+.motor-table.hover-row tbody tr:hover td.type-col,
+.motor-table.hover-row tbody tr:hover td.write-time {
+  background-color: #f0f8ff;
+}
+
+.motor-table tbody tr.selected td.type-col,
+.motor-table tbody tr.selected td.eq-name,
+.motor-table tbody tr.selected td.write-time {
+  background-color: #cce5ff !important;
+}
