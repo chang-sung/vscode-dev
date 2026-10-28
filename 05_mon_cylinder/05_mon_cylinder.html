@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickLoad Monitoring</title>
+    <link rel="stylesheet" href="css/100_utils/styles.css">
+    <link rel="stylesheet" href="css/100_utils/flatpickr.min.css">
+    <link rel="stylesheet" href="css/05_mon_cylinder/styles_mon_cylinder.css">
+
+    <script src="js/100_utils/jquery.min.js"></script>
+    <script src="js/100_utils/dataTables.min.js"></script>
+    <script src="js/100_utils/echarts.min.js"></script>
+    <script src="js/100_utils/xlsx.full.min.js"></script>
+    <script src="js/100_utils/dataTable.fixedHeader.min.js"></script>
+    <script src="js/100_utils/dataTable.fixedColumns.min.js"></script>
+</head>
+
+<body>
+    <h1 class="top-container">실린더 속도 모니터링</h1>
+
+    <!-- 사이드바 -->
+    <div id="sidebar-placeholder"></div>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="container">
+
+        <!-- 필터 버튼 영역 -->
+        <div class="menu-container">
+            <div class="group1-container">
+                <h3>설비 Unit 그룹</h3>
+                <div class="button_group">
+                    <button class="bay-group-btn" data-group="ATT_TR">ATT_TR</button>
+                    <button class="bay-group-btn" data-group="LD_TRAY">LD_TRAY</button>
+                    <button class="bay-group-btn" data-group="TRASH">TRASH</button>
+                    <button class="bay-group-btn" data-group="ULD_TRAY">ULD_TRAY</button>
+                    <button class="bay-group-btn" data-group="PA_TO_TR">PA_TO_TR</button>
+                    <button class="bay-group-btn" data-group="LAMI_ROLLER">LAMI_ROL</button>
+                    <button class="bay-group-btn" data-group="FILM_SUPPLY">FILM</button>
+                    <button class="bay-group-btn all-groups-btn" data-group="ALL">전체보기</button>
+                </div>
+                
+            </div>
+
+            <div class="group2-container">
+                <h3>필터링 옵션</h3>
+
+                <div class="filter-groups-wrapper">
+
+                    <!-- 🔹 1번 줄 : Shift / 설비 / Unit -->
+                    <div class="filter_option_group1">
+                        <select id="shift-select">
+                            <option value="">Shift 전체</option>
+                            <option value="a">A조</option>
+                            <option value="b">B조</option>
+                            <option value="c">C조</option>
+                            <option value="d">D조</option>
+                        </select>
+
+                        <select id="type-select">
+                            <option value="all">Type 전체</option>
+                            <option value="phone">Phone</option>
+                            <option value="foldable">Foldable</option>
+                        </select>
+
+                        <select id="eqp-select"></select>
+
+                    </div>
+
+                    <!-- 🔹 2번 줄 : 체크박스 -->
+                    <div class="filter_option_group2">
+                        <label>
+                            <input type="checkbox" id="abnormal-checkbox">
+                            이상설비만 보기
+                        </label>
+
+                        <label>
+                            <input type="checkbox" id="outlier-checkbox">
+                            이상치만 보기
+                        </label>
+
+                        <label>
+                            <input type="checkbox" id="important-checkbox">
+                            중요축만 보기
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="group3-container">
+                <h3>모니터링</h3>
+                <div class="spec_mon_group">
+                    <!-- JS로 동적 생성 -->
+                    <!-- 전체설비 / 이상설비 / TTTM율 -->
+                </div>      
+            </div> 
+
+            <div class="group4-container">
+                <h3>추가 옵션</h3>
+                <div class="button2_group">
+                    <button id="inform-btn">Inform 등록</button>            
+                    <button id="export-excel-btn">엑셀 변환</button>
+                    <button id="toggle-spec-edit-btn">SPEC 변경</button> 
+                </div>      
+            </div> 
+        </div>
+
+        <div class="cylinder-table-wrapper">
+            <table class="cylinder-table hover-row" id="cylinder-table-container"></table>
+        </div>
+    </div>
+    
+    
+    <script>
+        $(function() {
+            // sidebar.html 로드 및 초기화
+            $("#sidebar-placeholder").load("sidebar.html", function() {
+                initSidebar(); // 스크립트 초기화 함수 호출
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById("export-excel-btn").addEventListener("click", function () {
+            const dataTable = $("#cylinder-table-container").DataTable();
+            if (!dataTable) {
+                alert("DataTable을 찾을 수 없습니다.");
+                return;
+            }
+
+            // DataTable 내에서 HTML 테이블 생성 (모든 행 포함)
+            const exportTable = document.createElement("table");
+            exportTable.innerHTML = $("#cylinder-table-container").clone()[0].innerHTML;
+
+            const tbody = exportTable.querySelector("tbody");
+            tbody.innerHTML = "";
+
+            dataTable.rows({ search: "applied" }).every(function () {
+                const row = this.node();
+                const cloned = row.cloneNode(true);
+
+                // ✅ 각 셀에서 이모지 제거
+                cloned.querySelectorAll("td").forEach(td => {
+                    // 텍스트만 추출한 뒤 이모지 제거
+                    const cleanText = td.textContent.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, "").trim();
+                    td.innerHTML = cleanText;
+                });
+
+                tbody.appendChild(cloned);
+            });
+
+            const wb = XLSX.utils.table_to_book(exportTable, { sheet: "Cylinder Data" });
+            XLSX.writeFile(wb, "cylinder_speed_data.xlsx");
+        });
+
+    </script>
+
+    <script src="js/05_mon_cylinder/scripts_mon_cylinder_init.js"></script>
+    <script src="js/05_mon_cylinder/scripts_mon_cylinder_log.js"></script>
+    <script src="js/05_mon_cylinder/scripts_mon_cylinder_inform.js"></script>
+    <script src="js/05_mon_cylinder/scripts_mon_cylinder_table.js"></script>
+    <script src="js/05_mon_cylinder/scripts_mon_cylinder.js"></script>
+    
+</body>
+</html>
