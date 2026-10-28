@@ -41,8 +41,13 @@ window.PartsHistoryCycle = (() => {
             const partsGroup = clean(row.Parts_Group);
             // Unit, 등급, P/N은 그룹 키에 넣지 않는다. 요청된 세 컬럼만으로 묶는다.
             const key = JSON.stringify([eqName, subUnit, partsGroup]);
-            if (!groups.has(key)) groups.set(key, { eqName, subUnit, partsGroup, times: new Set() });
-            groups.get(key).times.add(time);
+            if (!groups.has(key)) groups.set(key, {
+                eqName, subUnit, partsGroup, times: new Set(), eqGroups: new Set(), units: new Set()
+            });
+            const group = groups.get(key);
+            group.times.add(time);
+            if (clean(row.EQ_Group)) group.eqGroups.add(clean(row.EQ_Group));
+            if (clean(row.Unit)) group.units.add(clean(row.Unit));
         }
 
         const items = Array.from(groups.values(), group => {
@@ -53,6 +58,8 @@ window.PartsHistoryCycle = (() => {
             const previousTime = intervalCount ? times[count - 2] : null;
             return {
                 eqName: group.eqName, subUnit: group.subUnit, partsGroup: group.partsGroup,
+                eqGroup: Array.from(group.eqGroups).sort().join(', '),
+                unit: Array.from(group.units).sort().join(', '),
                 count, intervalCount, previousTime, lastTime,
                 recentDays: intervalCount ? (lastTime - previousTime) / DAY_MS : null,
                 averageDays: intervalCount ? (lastTime - times[0]) / DAY_MS / intervalCount : null
@@ -76,7 +83,8 @@ window.PartsHistoryCycle = (() => {
 
         for (const item of items) {
             const tr = document.createElement('tr');
-            const values = [item.eqName || '—', item.subUnit || '—', item.partsGroup || '—',
+            const values = [item.eqGroup || '—', item.eqName || '—', item.unit || '—',
+                item.subUnit || '—', item.partsGroup || '—',
                 item.count, item.intervalCount, formatTime(item.previousTime), formatTime(item.lastTime),
                 item.recentDays === null ? '산출 불가' : item.recentDays.toFixed(2),
                 item.averageDays === null ? '산출 불가' : item.averageDays.toFixed(2)];
@@ -90,7 +98,7 @@ window.PartsHistoryCycle = (() => {
         if (!items.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 9;
+            td.colSpan = 11;
             td.textContent = '조건에 맞는 완료된 A급·B급 교체 이력이 없습니다.';
             tr.appendChild(td);
             fragment.appendChild(tr);
