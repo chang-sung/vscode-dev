@@ -50,7 +50,7 @@ model = model.to(device)
 
 # ✅ 손실 함수 및 옵티마이저
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 
 # ✅ EarlyStopping & ModelCheckpoint 설정
 best_acc = 0.0
@@ -117,25 +117,26 @@ for epoch in range(num_epochs):
 model.load_state_dict(best_model_wts)
 
 # ✅ Confusion Matrix 시각화 함수
-def plot_confusion_matrix(model, dataloader):
+def plot_roc_curve(model, dataloader):
     model.eval()
-    all_preds = []
+    all_probs = []
     all_labels = []
 
     with torch.no_grad():
         for inputs, labels in dataloader:
             inputs = inputs.to(device)
             outputs = model(inputs)
-            preds = torch.softmax(outputs, dim=1)[:,1]
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            probs = torch.softmax(outputs, dim=1)[:, 1]
+            all_probs.extend(probs.cpu().numpy())
+            all_labels.extend(labels.numpy())
 
     fpr, tpr, thresholds = roc_curve(all_labels, all_probs)
     roc_auc = auc(fpr, tpr)
 
     plt.figure()
-    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.4f})')
-    plt.plot([0,1], [0,1], color='navy', lw=2, linestyle ='--')
+    plt.plot(fpr, tpr, color='darkorange', lw=2, 
+            label=f'ROC curve (AUC = {roc_auc:.4f})')
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
     plt.xlim([-0.05, 1.05])
     plt.ylim([-0.05, 1.05])
 
@@ -175,7 +176,7 @@ def evaluate_model(model, dataloader):
     all_labels = []
 
     with torch.no_grad():
-        for inpus, labels in dataloader:
+        for inputs, labels in dataloader:
             inputs = inputs.to(device)
             labels = labels.to(device)
             outputs = model(inputs)
