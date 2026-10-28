@@ -1,0 +1,1722 @@
+html, body {
+    font-family: 'Segoe UI', 'Pretendard', sans-serif;
+    overflow: hidden;  /* ✅ 전체 페이지에서 스크롤 제거 */
+    margin: 0;
+    padding: 0;
+}
+
+.button_group {
+    display: flex;
+    gap: 10px;
+    margin-left: 5px;
+}
+
+.main-wrapper {
+    margin-left: -100px;
+
+}
+
+/*---------------------------- 관리자 모드 ip 영역 ------------------------------*/
+#user-name-display {
+  position: absolute;
+  top: 50px;
+  right: 45px;
+}
+
+/* ========================== 버튼 스타일 */
+
+.menu-container {
+    display: flex;
+    width: 1660px;
+    margin-left: -100px;
+    margin-top: -30px;
+    margin-bottom: 5px;
+    --g2w: 462px;  /* group2 width (파츠 관리) */
+    --g3w: 431px;  /* group3 width (파츠 관리) */
+}
+
+/* 파츠조회 탭일 때 값 변경 */
+body.mode-search .menu-container{
+  --g2w: 462px;  /* group2 width (파츠조회) */
+  --g3w: 431px;  /* group3 width (파츠조회) */
+}
+
+.group1-container h3,
+.group2-container h3,
+.group3-container h3,
+.group4-container h3 {
+    margin: 2px 0 2px 3px;  /* 위쪽 마진 제거 */
+    font-size: 18px;
+    color: #555;
+    border-left: 4px solid #007bff;
+    padding-left: 5px;
+    margin-bottom: 8px;
+}
+  
+.group1-container {
+    display: flex;
+    flex-direction: column; /* ✅ 수직 정렬로 변경 */
+    width: 335px;             /* 필요 시 줄바꿈 유도 */
+    height: 115px;
+    gap: 1px;
+    padding-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.group1-container .row-1{
+    display: flex;
+    gap: 10px;
+}
+
+.group1-container .row-2{
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.group2-container {
+    display: flex;
+    flex-direction: column; /* h3는 위에, 아래는 두 그룹이 좌우로 */
+    width: var(--g2w);
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* ✅ h3 아래 두 그룹을 좌우 정렬 */
+.group2-inner-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+}
+  
+.group3-container {
+    display: flex;
+    position: relative; /* 버튼 절대 위치 기준이 됨 */
+    flex-direction: column; /* h3는 위에, 아래는 두 그룹이 좌우로 */
+    width: var(--g3w);
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* ✅ h3 아래 두 그룹을 좌우 정렬 */
+.group3-inner-wrapper {
+    display: flex;
+    flex-direction: row;      /* 좌우 배치 */
+    align-items: flex-start;
+    gap: 5px;
+}
+  
+.group4-container {
+    display: flex;
+    position: relative;  /* ✅ 요거 추가하면 됩니다! */
+    flex-direction: column; /* ✅ 수직 정렬로 변경 */
+    width: 390px;  
+    height: 115px;
+    padding-left: 5px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.group4-container .row-1{
+    display: flex;
+    gap: 10px;
+}
+
+.group4-container .row-2{
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+#mro-link-btn,
+#g-ems-link-btn {
+    font-size: 12px;   /* 원하는 크기로 조정 (예: 11px ~ 13px) */
+}
+
+/* ========================== 설비 그룹 박스*/
+.group2-inner-1{
+    display: flex;
+    gap: 5px;
+    margin-top: 1px;
+    margin-left: 5px;
+    
+}
+
+.group2-inner-2{
+    display: flex;
+    gap: 5px;
+    margin-left: 5px;
+    margin-top: 7px;
+}
+
+/*------------- 파츠 조회 필터링 ----------------*/
+
+#eqp-division-select{
+    width: 110px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+#search-unit-select{
+    width: 120px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+#search-type-select {
+    width: 110px;
+    height: 30px !important;           /* ✅ 높이 줄임 */
+    font-size: 14px;           /* 글자 크기도 줄이기 */
+    text-align: center;              /* 기본 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#search-input {
+    width: 230px;
+    height: 30px !important;           /* ✅ 높이 줄임 */
+    font-size: 14px;           /* 글자 크기도 줄이기 */
+    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+
+/*----- 라인 파츠, 필수 파츠 필터링 ------*/
+
+#parts-tap-select{
+    width: 110px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+#eqp-type-select{
+    width: 120px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+}
+
+#parts-division-select{
+    width: 125px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+}
+
+#unit-select{
+    width: 125px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+}
+
+.filter_search_combined {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+#search-type-select-2 {
+    width: 110px;
+    height: 30px !important;           /* ✅ 높이 줄임 */
+    font-size: 14px;           /* 글자 크기도 줄이기 */
+    text-align: center;              /* 기본 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#search-input-2 {
+    width: 230px;
+    height: 30px !important;           /* ✅ 높이 줄임 */
+    font-size: 14px;           /* 글자 크기도 줄이기 */
+    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.menu-container button {
+    padding: 8px 20px;
+    height: 33px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+}
+
+.search-btn {
+    background-color: #007bff;
+    width: 90px;
+    height: 30px !important;              /* ✅ 버튼 높이도 20px */
+    color: white;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    line-height: 20px !important;      /* ✅ 수직 중앙 정렬 핵심 */
+    padding: 0 5px !important;           /* 좌우 여백만 유지 */
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search-btn:hover {
+    background-color: #0056b3;
+}
+
+/*------------- 파츠 구매 필터링 ----------------*/
+#purchase-eqp-type-select{
+    width: 110px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+#purchase-parts-division-select{
+    width: 135px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+}
+
+#purchase-unit-select{
+    width: 125px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+}
+
+#purchase-status-select{
+    width: 112px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+.filter_search_combined {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+#purchase-search-type-select {
+    width: 110px;
+    height: 30px !important;           /* ✅ 높이 줄임 */
+    font-size: 14px;           /* 글자 크기도 줄이기 */
+    text-align: center;              /* 기본 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#purchase-search-input {
+    width: 230px;
+    height: 30px !important;           /* ✅ 높이 줄임 */
+    font-size: 14px;           /* 글자 크기도 줄이기 */
+    padding: 0 10px !important;            /* ✅ 내부 여백 최소화 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#purchase-catg-select{
+    width: 105px;       /* ✅ 원하는 너비로 조절 */
+    height: 30px;       /* ✅ 높이도 조정 */
+    font-size: 14px;    /* ✅ 글자 크기 */
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;              /* 기본 */
+
+}
+
+#purchase-status-multiselect { 
+  position: relative; 
+  display: inline-block; 
+  width: 118px;
+  font-size: 14px;    /* ✅ 글자 크기 */
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  text-align: center;               /* 기본 */
+}
+
+.msel-toggle {
+  position: relative;          /* ✅ caret 기준을 버튼으로 */
+  width: 100%;
+  height: 26px !important;
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 5px;
+  font-size: 14px;
+  color: #111;
+  overflow: hidden;            /* 라벨 엘리ipsis 동작 안정화 */
+}
+
+.msel-label {
+  flex: 1 1 auto;              /* ✅ flex-basis 자동 */
+  min-width: 0;                /* ✅ flex 수축 허용(ellipsis 조건) */
+  display: block;              /* ✅ 일부 브라우저에서 안정적 표시 */
+  white-space: nowrap;
+  overflow: hidden;            /* ✅ ellipsis 작동 조건 */
+  text-overflow: ellipsis;
+  color: #111;                 /* ✅ 혹시 색 덮어씀 방지 */
+}
+
+.msel-caret {
+  position: absolute;
+  right: 1px;
+  top: 50%;
+  transform: translateY(-35%);
+  pointer-events: none;
+  font-size: 12px;
+  color: #111;
+}
+
+.msel-panel { 
+  position: absolute; 
+  z-index: 20; 
+  left: 0; 
+  right: 0; 
+  background: #fff; 
+  border: 1px solid #ddd; 
+  border-radius: 5px; 
+  margin-top: 4px; 
+  box-shadow: 0 6px 20px rgba(0,0,0,.12); 
+  max-height: 260px; 
+  overflow: auto; 
+  display: none; 
+
+}
+
+.msel.open .msel-panel { 
+  display: block; 
+}
+
+.msel-row { 
+  display:flex; 
+  align-items:center; 
+  gap:8px; 
+  padding:4px 6px; 
+  cursor: pointer; 
+  border-radius:4px; 
+}
+
+.msel-row:hover { background:#f6f8fb; }
+.msel-row input { pointer-events:auto; }
+.msel-row .all { font-weight: 600; }
+
+/* ---------------------------- EMS Update 시간 영역 ---------------------------- */
+
+.update-time {
+  float: right;
+  font-size: 14px;
+  color: #555;
+  margin-top: -40px; /* 제목과 수직 정렬 조정 */
+  margin-right: 20px;
+}
+
+
+/* ----------------------------------------- Part Search 페이지 ----------------------------------------- */
+
+.parts-search-container { 
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;     /* ✅ 가운데 정렬 */
+    width: 1660px;
+    height: 605px;
+    gap: 10px;
+    
+}
+
+.parts-search-image-wrapper{
+    height: 580px;        
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.image-container {
+    position: relative; 
+    display: inline-block;
+    
+}
+.parts-image { 
+    width: 799px;
+    height : auto;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.highlight-box { 
+    position:absolute; 
+    border:2px solid green; 
+    background-color:rgba(0,255,0,0.2); 
+    cursor:pointer; 
+}
+
+.highlight-box:hover { 
+    background-color:rgba(255,255,0,0.35); 
+}
+
+.highlight-box.active {
+  outline: 3px solid rgba(0,0,0,0.7);
+  background-color: rgba(0, 200, 255, 0.25); /* 살짝 파란빛 */
+}
+
+.zero-stock { 
+    color:#b80000; 
+    font-weight:600; 
+}
+
+.non-zero-stock { 
+    color:#0b7; 
+}
+
+/* ===== 주요 파츠 탭 전용 테이블 ===== */
+
+
+.parts-search-table {
+    width: 850px;
+    height: 580px;          /* 원하는 높이로 조절 */
+    scrollbar-gutter: stable both-edges; /* 지원 브라우저에서 여백 고정 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+#parts-title{
+    margin-top: 0px;
+}
+
+.search-wrapper .item-table {
+  /* 필요 시 별도 간격 사용 */
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.search-wrapper .item-table th {
+  font-size: 15px;
+  padding: 2px 0px;         /* 컬럼 간격(패딩) */
+  background: #f6f8fa;
+}
+.search-wrapper .item-table td {
+  font-size: 14px;
+  padding: 6px 0px;
+}
+
+.item-table tbody tr:hover { 
+    background-color:#f0f8ff; 
+    cursor:pointer; 
+}
+
+.item-table tbody tr.selected { 
+    background-color:#87cefa !important; 
+    color:#fff; 
+}
+
+/* ----------------------------------------- 라인 파츠 페이지 ----------------------------------------- */
+
+.line-parts-container{
+    width: 1660px;
+}
+
+/* ===== 라인 파츠 탭 전용 테이블 ===== */
+.line-parts-wrapper .line-table {
+  border-collapse: collapse;   /* 행 간격 없이 촘촘하게 */
+  table-layout: fixed;
+}
+.line-parts-wrapper .line-table th {
+  font-size: 15px;
+  padding: 8px 0px;
+  background: #eef5ff;
+}
+.line-parts-wrapper .line-table td {
+  font-size: 14px;
+  padding: 6px 0px;
+}
+
+/* Hover */
+.line-table tbody tr:hover {
+  background-color: #f0f8ff;
+  cursor: pointer;
+}
+
+/* 클릭 선택 상태 */
+.line-table tbody tr.selected {
+  background-color: #87cefa !important;
+  color: #fff;
+}
+
+
+.line-table .dt-input {
+    width: 100%;
+    max-width: 100%;
+    display: block;              /* 인라인 공간 계산 이슈 방지 */
+    box-sizing: border-box;      /* padding 포함해 100% 채우기 */
+    padding: 4px 6px;
+    font: inherit;               /* 표와 동일한 폰트/크기 */
+    line-height: 1.2;
+}
+
+
+/* ----------------------------------------- 필수 파츠 페이지 ----------------------------------------- */
+.essential-parts-container{
+    width: 1660px;
+}
+
+/* ===== 파츠 구매 탭 전용 테이블 ===== */
+.essential-parts-wrapper .essential-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.essential-parts-wrapper .essential-table th {
+  font-size: 15px;
+  padding: 8px 0px;
+  background: #fff7e6;
+}
+.essential-parts-wrapper .essential-table td {
+  font-size: 14px;
+  padding: 6px 0px;
+}
+
+.essential-table tbody tr:hover { 
+    background-color:#f0f8ff; 
+    cursor:pointer; 
+}
+.essential-table tbody tr.selected { 
+    background-color:#87cefa !important; 
+    color:#fff; 
+}
+
+/* ----------------------------------------- 파츠 구매  페이지 ----------------------------------------- */
+.parts-purchase-container{
+    width: 1660px;
+}
+
+:root{
+  /* 색상 변수 */
+  --border: #ddd;
+  --head1:  #fff7e6;   /* 헤더 1행 */
+  --head2:  #ffff99;   /* 헤더 2행 */
+  --hover:  #cfe8ff;   /* 행 hover */
+  --sel:    #87cefa;   /* 행 선택 */
+
+  /* 왼쪽 3열 오프셋 (요청일/구분/Q-Code 폭에 맞춰 조정) */
+  --left1: 0px;
+  --left2: 90px;      /* 요청일 폭 */
+  --left3: 160px;      /* 요청일 + 구분 폭 */
+  --left4: 230px;      /* 요청일 + 구분 폭 */
+}
+
+/* ===== 테이블 베이스 ===== */
+.parts-purchase-wrapper .purchase-mgmt-table{
+  width:100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+
+}
+
+/* 이 테이블 범위에서는 셀 보더 사용 안 함(라인은 box-shadow로 처리) */
+.parts-purchase-wrapper .purchase-mgmt-table,
+.parts-purchase-wrapper .purchase-mgmt-table th,
+.parts-purchase-wrapper .purchase-mgmt-table td{
+  border:0 !important;
+}
+
+.parts-purchase-wrapper .purchase-mgmt-table th{
+  font-size:15px; padding:8px 0;
+  background:var(--head1) !important;
+  /* 세로 라인(오른쪽) */
+  box-shadow: inset -1px 0 0 var(--border);
+}
+.parts-purchase-wrapper .purchase-mgmt-table td{
+  font-size:14px; padding:6px 0;
+  /* 세로 라인(오른쪽) + 가로 라인(아래) */
+  box-shadow: inset -1px 0 0 var(--border), inset 0 -1px 0 var(--border);
+}
+
+/* 첫 번째 컬럼은 왼쪽 외곽선도 추가 */
+.parts-purchase-wrapper .purchase-mgmt-table :is(thead th, tbody td):first-child{
+  box-shadow:
+    inset  1px 0 0 var(--border),  /* 왼쪽 외곽선 */
+    inset -1px 0 0 var(--border),  /* 오른쪽 */
+    inset  0 -1px 0 var(--border); /* 아래(바디) */
+}
+
+/* 관리자 전용 컬럼 색상 */
+.purchase-mgmt-table thead th.admin-col{ 
+  background:#EAF7EA !important; 
+  color:#2F6B2F; 
+}
+
+/* 그룹 헤더 / 서브 헤더 */
+.purchase-mgmt-table thead tr.top-group th.th-group{ text-align:center; }
+.purchase-mgmt-table thead tr.sub-head th{
+  background:var(--head2) !important;
+  z-index:1 !important;
+}
+
+/* 말줄임 처리 */
+.dt-ellipsis{
+  display:inline-block; max-width:100%;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; vertical-align:bottom;
+}
+
+/* -----------------------------------------
+   왼쪽 3개 컬럼 고정 (요청일 ~ Q-Code)
+----------------------------------------- */
+
+/* 헤더 고정 */
+.parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(1){ position:sticky; left:var(--left1); z-index:8; }
+.parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(2){ position:sticky; left:var(--left2); z-index:8; }
+.parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(3){ position:sticky; left:var(--left3); z-index:8; }
+.parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(4){ position:sticky; left:var(--left4); z-index:8; }
+
+/* 바디 고정 + 페인트 안정화 */
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(1){ position:sticky; left:var(--left1); z-index:6; will-change:transform; transform:translateZ(0); }
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(2){ position:sticky; left:var(--left2); z-index:6; will-change:transform; transform:translateZ(0); }
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(3){ position:sticky; left:var(--left3); z-index:6; will-change:transform; transform:translateZ(0); }
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(4){ position:sticky; left:var(--left4); z-index:6; will-change:transform; transform:translateZ(0); }
+
+/* -----------------------------------------
+   기본 배경 & 상태색
+----------------------------------------- */
+
+/* 기본 바디 배경 */
+.purchase-mgmt-table tbody tr > td{ background:#fff; }
+
+/* 상태별 배경 */
+.purchase-mgmt-table tbody tr.st-req     > td{ background:#fff !important; }
+.purchase-mgmt-table tbody tr.st-wait    > td{ background:#fff3cd !important; }
+.purchase-mgmt-table tbody tr.st-drop    > td{ background:#f8d7da !important; }
+.purchase-mgmt-table tbody tr.st-done    > td{ background:#d4edda !important; }
+.purchase-mgmt-table tbody tr.st-arrived > td{ background:#e2e3e5 !important; }
+
+/* -----------------------------------------
+   Hover / Selected (고정열 포함 완전 통일)
+----------------------------------------- */
+
+/* Hover: 모든 열 */
+.purchase-mgmt-table tbody tr:hover > td{
+  background:var(--hover) !important;
+  color:#000 !important;
+}
+/* Hover: 고정 3열도 동일하게 (z-index만 살짝 위) */
+.parts-purchase-wrapper .purchase-mgmt-table tbody tr:hover td:nth-child(-n+3){
+  background:var(--hover) !important;
+  color:#000 !important;
+  z-index:7 !important;
+}
+
+/* Selected: 모든 열 */
+.purchase-mgmt-table tbody tr.selected > td{
+  background:var(--sel) !important;
+  color:#fff !important;
+}
+/* Selected: 고정 3열도 동일 */
+.parts-purchase-wrapper .purchase-mgmt-table tbody tr.selected td:nth-child(-n+3){
+  background:var(--sel) !important;
+  color:#fff !important;
+  z-index:7 !important;
+}
+
+/* 상태행도 hover/selected 시 동일 색으로 통일 */
+.purchase-mgmt-table tbody tr:is(.st-req,.st-wait,.st-drop,.st-done,.st-arrived):hover   > td{
+  background:var(--hover) !important; color:#000 !important;
+}
+.purchase-mgmt-table tbody tr:is(.st-req,.st-wait,.st-drop,.st-done,.st-arrived).selected > td{
+  background:var(--sel) !important;   color:#fff !important;
+}
+
+/* ───────────────── 헤더 가로 라인 정밀 배치 ───────────────── */
+
+/* 1) 헤더 1행(그룹 헤더): 위(top) + 우측(vertical)만 그린다 */
+.purchase-mgmt-table thead tr.top-group th {
+  box-shadow:
+    inset -1px 0 0 var(--border),  /* right vertical */
+    inset  0   1px 0 var(--border);/* top line (header top) */
+}
+
+/* 1-A) 1행 중 rowspan=2(=단일 헤더)는 헤더 전체 하단선도 본인이 담당 */
+.purchase-mgmt-table thead tr.top-group th[rowspan="2"] {
+  box-shadow:
+    inset -1px 0 0 var(--border),  /* right vertical */
+    inset  0   1px 0 var(--border),/* top */
+    inset  0  -3px 0 var(--border);/* bottom of header (slightly bolder) */
+}
+
+/* 2) 헤더 2행(서브 헤더): '중간선'(=윗선)과 '헤더 하단선'만, 좌측선은 만들지 않는다 */
+.purchase-mgmt-table thead tr.sub-head th {
+  box-shadow:
+    inset -1px 0 0 var(--border),  /* right vertical */
+    inset  0   1px 0 var(--border),/* middle line between row1 & row2 */
+    inset  0  -3px 0 var(--border);/* header bottom line */
+}
+
+
+/* 3) 헤더 각 행의 맨 왼쪽 셀만 왼쪽 외곽선 추가 (하나만 담당) */
+.purchase-mgmt-table thead tr.top-group th:first-child,
+.purchase-mgmt-table thead tr.sub-head  th:first-child {
+  box-shadow:
+    inset  1px 0 0 var(--border),  /* left outer */
+    inset -1px 0 0 var(--border),  /* right vertical */
+    inset  0   1px 0 var(--border),/* (row1) top / (row2) harmless */
+    inset  0  -3px 0 var(--border);/* bottom on row2 */
+}
+
+/* 서브헤더 첫 칸(EMS) — 왼쪽 경계선 제거로 두꺼운 효과 방지 */
+.purchase-mgmt-table thead tr.sub-head th:first-child {
+  box-shadow:
+    inset -1px 0 0 var(--border),   /* 오른쪽 세로선 */
+    inset  0   1px 0 var(--border), /* 중간(위쪽) */
+    inset  0  -3px 0 var(--border); /* 아래(두껍게) */
+  /* ✅ 왼쪽 경계선 제거 */
+  border-left: none !important;
+}
+
+/* 4) 안전장치: 서브헤더 첫 칸(EMS)엔 좌측선 절대 만들지 않기 */
+.purchase-mgmt-table thead tr.sub-head th { border-left: 0; }
+
+
+/* 인라인 편집 인풋/텍스트에어리어가 셀 안에 꽉 차되, 넘치지 않도록 */
+.purchase-mgmt-table .p-edit {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;         /* ★ 패딩 포함 폭 계산 */
+  height: 28px;                   /* textarea도 1줄 높이 */
+  line-height: 1.2;
+  padding: 6px 0px !important;      /* p-edit의 좌우 패딩 조정*/
+  border: 1px solid #d0d5dd;
+  border-radius: 5px;
+  background: #fff;
+}
+
+/* ───────────────── 구매구분 색상 ───────────────── */
+/* 표시 셀(일반 모드) */
+.purchase-mgmt-table td.catg-EMS,
+.purchase-mgmt-table td.catg-EMS .dt-ellipsis {
+  color: #0a58ca;      /* 파란색 */
+  font-weight: 700;    /* 볼드 */
+}
+.purchase-mgmt-table td.catg-SAP,
+.purchase-mgmt-table td.catg-SAP .dt-ellipsis {
+  color: rgb(2, 156, 100);         /* 초록색 */
+  font-weight: 700;
+}
+.purchase-mgmt-table td.catg-MRO,
+.purchase-mgmt-table td.catg-MRO .dt-ellipsis {
+  color: #f77700;      /* 주황색 */
+  font-weight: 700;
+}
+.purchase-mgmt-table td.catg-STG,
+.purchase-mgmt-table td.catg-STG .dt-ellipsis {
+  color: #000;         /* 검은색 */
+  font-weight: 700;
+}
+
+.purchase-mgmt-table td.catg-CONTRACT,
+.purchase-mgmt-table td.catg-CONTRACT .dt-ellipsis {
+  color: #000;         /* 검은색 */
+  font-weight: 700;
+}
+
+.purchase-mgmt-table td.catg-NUMBERING,
+.purchase-mgmt-table td.catg-NUMBERING .dt-ellipsis {
+  color: #000;         /* 검은색 */
+  font-weight: 700;
+}
+
+/* 편집 모드(select/input이 들어왔을 때도 동일하게 보이도록) */
+.purchase-mgmt-table td.catg-EMS .p-edit { color:#0a58ca; font-weight:700; }
+.purchase-mgmt-table td.catg-SAP .p-edit { color:#0b7; font-weight:700; }
+.purchase-mgmt-table td.catg-MRO .p-edit { color:#ff7a00;    font-weight:700; }
+.purchase-mgmt-table td.catg-STG .p-edit { color:#000;    font-weight:700; }
+
+
+.parts-purchase-wrapper .purchase-mgmt-table tbody td.dt-left {
+  text-align: left !important;
+  padding-left: 8px;
+}
+
+.parts-purchase-wrapper .purchase-mgmt-table tbody td.dt-right {
+  text-align: right !important;
+  padding-right: 8px;
+}
+
+/* 편집 입력이 들어간 셀에서만 좌우 패딩 0 */
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:has(.p-edit) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 특정 컬럼만 적용하려면 (6,10,17열) */
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(6):has(.p-edit),
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(10):has(.p-edit),
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(17):has(.p-edit) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 인풋 자체 여백도 0으로 하고 싶으면 */
+.parts-purchase-wrapper .purchase-mgmt-table tbody td:has(.p-edit) .p-edit {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* ---------------- 파츠 구매 현황 요약 카드 (refined) --------------------- */
+
+.summary-cards{
+  margin-left: 5px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  text-align:center;
+}
+
+/* 공통 카드 */
+.summary-card{
+  --accent: #98a2b3;      /* 기본 포인트 색 (상태별 override) */
+  --bg: #ffffff;          /* 기본 배경 (상태별 override) */
+
+  width: 90px;
+  padding: 8px 2px;
+  border-radius: 5px;
+  background: var(--bg);
+  border: 1px solid #eaecf0;
+  box-shadow: 0 1px 2px rgba(16,24,40,.06);
+  position: relative;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+/* 상단 포인트 바 (세련된 느낌 핵심) */
+.summary-card::before{
+  content:"";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 94px;
+  height: 5px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  opacity:.95;
+}
+
+/* 호버 */
+.summary-card:hover{
+  transform: translateY(-1px);
+  border-color:#d0d5dd;
+  box-shadow: 0 6px 18px rgba(16,24,40,.10);
+}
+
+/* 라벨/값 타이포 */
+.summary-card .label{
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: black;
+  letter-spacing: -0.2px;
+}
+
+.summary-card .value{
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: black;
+  text-align:center;
+  font-variant-numeric: tabular-nums; /* 숫자 폭 고정으로 더 깔끔 */
+  letter-spacing: -0.4px;
+}
+
+/* 상태별: "연한 배경 + 선명한 포인트 컬러" */
+.summary-card.st-req{
+  --accent:#ffffff;      /* indigo */
+  --bg: #ffffff;
+}
+
+.summary-card.st-wait{
+  --accent:#f59e0b;      /* amber */
+  --bg: #fffbeb;
+}
+
+.summary-card.st-done{
+  --accent:#16a34a;      /* green */
+  --bg: #ecfdf3;
+}
+
+.summary-card.st-dup{
+  --accent:#ef4444;      /* red */
+  --bg: #fff1f2;
+}
+
+/* ✅ 요약카드 선택(필터 ON) 강조 */
+.summary-card.active{
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(16,24,40,.08), 0 10px 22px rgba(16,24,40,.14);
+  transform: translateY(-1px);
+}
+
+/* (선택) 더 또렷하게: 상단 바도 살짝 두껍게 */
+.summary-card.active::before{
+  height: 6px;
+}
+
+/* ✅ 기본: 요약카드 숨김 */
+.group3-container .summary-container{
+  display: none;
+}
+
+/* ✅ 파츠 구매 탭일 때만 표시 */
+body.mode-purchase .group3-container .summary-container{
+  display: block;   /* 또는 flex */
+}
+
+/* ----------------------------------------- 테이블 편집 버튼 ----------------------------------------- */
+
+.table-wrap button {
+    padding: 8px 20px;
+    height: 35px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+}
+
+
+.edit-btn-wrapper{
+    display: flex;
+    justify-content: flex-end; /* ✅ 오른쪽 끝 정렬 */
+    align-items: center; 
+    width: 100%;
+    margin-bottom: 8px; /* 테이블과의 간격 */
+    gap: 5px;
+
+}
+
+.edit-btn-container{
+    display: flex;
+    justify-content: flex-end; /* ✅ 오른쪽 끝 정렬 */
+    gap: 5px;
+}
+
+.edit-btn-container-2,
+.edit-btn-container-3,
+.edit-btn-container-4{
+    display: flex;
+    gap: 5px;  
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 4px 5px 4px 5px;
+    align-items: center; 
+    margin-right: 5px;
+}
+
+/*------------------------------------*/
+/* 컨테이너 정렬 유지 */
+.edit-btn-container-4 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.edit-btn-container-4 img {
+  pointer-events: auto !important;
+  cursor: pointer;
+  display: inline-block;
+  z-index: 2; /* 혹시 툴팁 레이어 위로 */
+}
+
+/* 이미지 래퍼(툴팁은 여기서 만든다) */
+.step-tip {
+  position: relative;
+  display: inline-flex;
+  /* 겹쳐 배치 시 툴팁이 위에 오도록 */
+  z-index: 1;
+  cursor: pointer;
+}
+
+/* 이미지 hover 효과(투명 PNG 안전: 확대 + drop-shadow만 사용) */
+.step-tip img {
+  height: 30px;
+  transition: transform .25s ease, filter .25s ease;
+  pointer-events: none; /* 마우스 이벤트는 래퍼가 받도록 */
+}
+.step-tip:hover img {
+  transform: scale(1.1);
+}
+
+/* 툴팁 말풍선 */
+.step-tip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 45px;             /* 이미지 위에 표시 */
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(0,0,0,.82);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: transform .2s ease, opacity .2s ease;
+  z-index: 10;
+}
+
+/* 툴팁 화살표 */
+.step-tip::before {
+  content: '';
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  opacity: 0;
+  border: 6px solid transparent;
+  border-top-color: rgba(0,0,0,.82);
+  transition: transform .2s ease, opacity .2s ease;
+  z-index: 10;
+}
+
+/* hover 시 툴팁 표시 */
+.step-tip:hover::after,
+.step-tip:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 겹칠 때 hover된 항목이 위로 오도록 */
+.step-tip:hover { z-index: 5; }
+/*------------------------------------*/
+
+#purchase-date-range {
+    width: 180px;
+    height: 26px;
+    font-size: 14px;
+    border: 2px solid black;
+    border-radius: 5px;
+    text-align: center;
+    padding: 0px;
+}
+
+.edit-btn-wrapper button {
+  padding: 8px 20px;
+  height: 30px;
+  font-size: 14px;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.edit-group-btn {
+    background-color: #007bff;
+    width: 70px;
+    font-size: clamp(10px, 1.2vw, 14px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    margin: 0;  /* ✅ 좌우 간격 제거 */
+}
+  
+.edit-group-btn.active {
+    background-color: #002a66;  /* ✅ 훨씬 진한 파랑 */
+    border: 2px solid #007bff;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.edit-group-btn:hover {
+  background-color: #0056b3;
+}
+
+/* 비활성 상태 */
+.edit-group-btn:disabled {
+  background-color: #cccccc;  /* 회색 */
+  color: #666666;             /* 글자색도 흐리게 */
+  cursor: not-allowed;        /* 마우스 커서도 비활성 표시 */
+}
+
+/*-------------------------- 구매 승인 버튼 → 초록색----------------------- */
+#parts-purchase-btn-approve {
+    background-color: #28a745; /* 초록 */
+    color: white;
+    border: none;
+}
+
+/* 구매 반려 버튼 → 빨강색 */
+#parts-purchase-btn-reject {
+    background-color: #dc3545; /* 빨강 */
+    color: white;
+    border: none;
+}
+
+/* 공통 hover 효과 */
+#parts-purchase-btn-approve:hover {
+    background-color: #218838; /* 조금 진한 초록 */
+}
+
+#parts-purchase-btn-reject:hover {
+    background-color: #c82333; /* 조금 진한 빨강 */
+}
+
+/* ----------------------------------------- 교체 이력 필터링 ------------------------------------------*/
+
+.history-filter-container {
+    display: flex;
+    flex-direction: column;
+}
+
+#history-eqp-group-select{
+    width: 110px;
+    height: 30px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#history-eqp-type-select{
+    width: 95px;
+    height: 30px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#history-unit-type-select{
+      width: 90px;
+      height: 30px;
+      font-size: 14px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      text-align: center;
+}
+
+#history-search-type-select {
+    width: 110px;
+    height: 30px !important;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#history-search-input {
+    width: 230px;
+    height: 30px !important;
+    font-size: 14px;
+    padding: 0 10px !important;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.history-filter-container .group2-inner-1 {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.history-filter-container .filter_search_combined {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+/* 교체 이력 - 파츠 분류 멀티 체크 필터 */
+#history-parts-multiselect {
+    position: relative;
+    display: inline-block;
+    width: 130px;
+    height: 30px;
+    font-size: 14px;
+
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    box-sizing: border-box;
+
+    padding: 0 !important;
+}
+
+.history-parts-toggle {
+    width: 100%;
+    height: 100%;
+
+    border: none;
+    background: transparent;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0px;
+    margin: 0;
+
+    cursor: pointer;
+}
+
+.history-parts-label {
+    color: #111 !important;
+    line-height: 1;
+    transform: translateY(-3px);
+    font-size: 14px;
+    margin-left: -5px;
+}
+
+.history-parts-panel {
+    display: none;
+    position: absolute;
+    top: 34px;
+    left: 0;
+    width: 180px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    z-index: 50;
+    padding: 5px;
+}
+
+#history-parts-multiselect.open .history-parts-panel {
+    display: block;
+}
+
+.history-parts-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.history-parts-row:hover {
+    background: #f6f8fb;
+}
+
+.history-parts-row input {
+    cursor: pointer;
+}
+
+/* ----------------------------------------- 교체 이력 테이블 ----------------------------------------- */
+
+.parts-history-wrapper{
+    width: 1660px;
+}
+
+.parts-history-container{
+    width: 1660px;
+}
+
+.parts-history-wrapper .history-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.parts-history-wrapper .history-table th {
+  font-size: 15px;
+  padding: 8px 0px;
+  background: #e6f4ea !important;
+}
+
+.parts-history-wrapper .history-table td {
+  font-size: 14px;
+  padding: 6px 0px;
+}
+
+/* 교체 이력 특정 컬럼 폰트 축소 */
+.parts-history-wrapper .history-table td:nth-child(5),
+.parts-history-wrapper .history-table td:nth-child(8),
+.parts-history-wrapper .history-table td:nth-child(13) {
+    font-size: 13px;
+}
+
+.parts-history-wrapper .history-table tbody tr:hover {
+  background-color: #f0f8ff !important;
+  cursor: pointer;
+}
+
+.parts-history-wrapper .history-table tbody tr.selected {
+  background-color: #87cefa !important;
+  color: #fff;
+}
+
+.parts-history-wrapper .history-table .dt-input {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+    box-sizing: border-box;
+    padding: 4px 6px;
+    font: inherit;
+    line-height: 1.2;
+}
+
+/* 행 입력 드롭다운  */
+.parts-history-wrapper .history-table .dt-select {
+    width: 100%;
+    height: 29px;
+    display: block;
+    box-sizing: border-box;
+    font: inherit;
+    line-height: 1.2;
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0px; /* 화살표 공간 보정 */
+}
+.parts-history-wrapper .history-table .subunit-combo {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    width: 100%;
+}
+
+.parts-history-wrapper .history-table .subunit-combo select {
+    min-width: 0;
+}
+
+/* 점검 / 교체 summary 카드 색상 */
+.summary-card.st-need{
+  --accent:#ef4444;      /* red */
+  --bg: #fff1f2;
+}
+
+.summary-card.st-review{
+  --accent:#f59e0b;
+  --bg:#fffbeb;
+}
+
+/* 기본: 요약카드 숨김 */
+.group3-container .summary-container{
+  display: none;
+}
+
+/* 파츠 구매 탭일 때만 표시 */
+body.mode-purchase .group3-container .summary-container{
+  display: block;
+}
+
+/* 점검 / 교체 탭일 때도 표시 */
+body.mode-history .group3-container .summary-container{
+  display: block;
+}
+
+/* 점검 필요 (빨강 계열) */
+.parts-history-wrapper .history-table tbody tr.row-need {
+  background-color: #f8d7da;
+}
+
+/* 평가중 (주황 계열) */
+.parts-history-wrapper .history-table tbody tr.row-review {
+  background-color: #fff3cd;
+}
+
+/* ----------------------------------------- 품질 이력 테이블 ----------------------------------------- */
+
+.quality-history-wrapper {
+    width: 1660px;
+}
+
+.quality-history-container {
+    width: 1660px;
+}
+
+.quality-history-wrapper .quality-history-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+
+/* 품질 이력 테이블 헤더 색상 */
+.quality-history-wrapper .quality-history-table thead th {
+    background: #e8f1ff !important;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 8px 0px;
+    text-align: center;
+}
+
+/* 바디 */
+.quality-history-wrapper .quality-history-table tbody td {
+    font-size: 14px;
+    padding: 6px 0px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+/* hover */
+.quality-history-wrapper .quality-history-table tbody tr:hover {
+    background-color: #f0f8ff !important;
+    cursor: pointer;
+}
+
+/* selected */
+.quality-history-wrapper .quality-history-table tbody tr.selected {
+    background-color: #87cefa !important;
+    color: #fff;
+}
+
+/* 입력창이 컬럼 너비를 넘지 않도록 */
+.quality-history-wrapper .quality-history-table .dt-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    display: block;
+    box-sizing: border-box;
+    padding: 4px 4px;
+    font: inherit;
+    line-height: 1.2;
+}
+
+/* select 높이 보정 */
+.quality-history-wrapper .quality-history-table .dt-select {
+    height: 29px;
+    text-align: center;
+}
+
+/* textarea 보정 */
+.quality-history-wrapper .quality-history-table textarea.dt-input {
+    height: 29px;
+    resize: vertical;
+}
+
+.quality-history-table .dt-center {
+    text-align: center !important;
+}
+
+.quality-history-wrapper .quality-history-table thead th:nth-child(11),
+.quality-history-wrapper .quality-history-table thead th:nth-child(12),
+.quality-history-wrapper .quality-history-table thead th:nth-child(13) {
+    background: #EAF7EA !important;
+}
+
+/* 품질 이력 - 편집/등록 중 input, textarea가 들어간 셀은 padding 제거 */
+.quality-history-wrapper .quality-history-table tbody td:has(.dt-input) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* input / textarea 자체 내부 여백 제거 */
+.quality-history-wrapper .quality-history-table .dt-input {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* 품질 이력 - 현황 / 비고 / 처리내용 줄바꿈 표시 */
+.quality-history-wrapper .quality-history-table tbody td:nth-child(5),
+.quality-history-wrapper .quality-history-table tbody td:nth-child(8),
+.quality-history-wrapper .quality-history-table tbody td:nth-child(9),
+.quality-history-wrapper .quality-history-table tbody td:nth-child(11) {
+    white-space: pre-line !important;
+    text-align: left;
+    line-height: 1.5;
+}
+
+/* 처리 완료 */
+.quality-history-table tbody tr.row-done td {
+    background-color: #d4edda !important;
+}
+
+/*------------- 품질 이력 필터링 ----------------*/
+
+.quality-history-filter-container {
+    display: flex;
+    flex-direction: column;
+}
+
+#quality-history-eqp-select,
+#quality-history-model-select,
+#quality-history-type-select,
+#quality-history-catg-select {
+    width: 105px;
+    height: 30px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#quality-history-search-type-select {
+    width: 105px;
+    height: 30px !important;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#quality-history-search-input {
+    width: 230px;
+    height: 30px !important;
+    font-size: 14px;
+    padding: 0 10px !important;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+/*------------- 품질 summary card ----------------*/
+.group3-container .summary-container {
+    display: none;
+}
+
+/* 품질 이력 탭에서 summary 카드 표시 */
+body.mode-quality-history .group3-container .summary-container {
+    display: block;
+}
+
+/* 품질이력 가이드 이미지 */
+.quality-history-top-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;   /* 이미지 하단과 버튼 하단 정렬 */
+    width: 100%;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.quality-history-top-wrapper .edit-btn-wrapper {
+    width: auto;             /* 기존 width:100% 영향 제거 */
+    margin-bottom: 0;        /* 기존 margin-bottom 영향 제거 */
+}
+
+.quality-history-guide {
+    position: relative;
+    z-index: 100;
+}
+
+.quality-history-guide img {
+    display: block;
+    width: 300px;
+    height: auto;
+    cursor: zoom-in;
+    transition: transform 0.25s ease;
+    transform-origin: right top;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.quality-history-guide:hover img {
+    transform: scale(4.5);
+    z-index: 9999;
+}
+
+/* ----------------------------------------- 테이블 공통 ----------------------------------------- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;  
+}
+
+
+/* 구매담당자 모드에서만 파츠 구매 컨테이너 전체폭 */
+body.role-purchaser .parts-purchase-container {
+  width: 100% !important;
+  max-width: 96.2vw;
+  overflow-x: auto;
+}
+
+/* PO Reject 셀을 아이콘 위한 앵커로 */
+td.po-reject-cell {
+  position: relative;
+  padding-right: 24px;      /* 아이콘 자리 확보 */
+  text-align: center;         /* 텍스트는 기본 왼쪽 정렬 유지 */
+}
+
+/* 아이콘을 셀의 오른쪽 끝에 고정 */
+td.po-reject-cell .row-handle.in-po-reject {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  cursor: grab;
+  opacity: .9;
+}
+
+td.po-reject-cell .row-handle.in-po-reject:active {
+  cursor: grabbing;
+  opacity: 1;
+}
+
+/* 텍스트는 자연스럽게 남은 공간 사용 */
+td.po-reject-cell .po-reject-text {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
