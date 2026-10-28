@@ -173,7 +173,7 @@ function buildCylinderHeader(specs = {}, specs_Max = {}, opts = {}) {
 
     const thSpecLabel = document.createElement('th');
     thSpecLabel.rowSpan = 2;
-    thSpecLabel.classList.add('spec-title-cell');
+    thSpecLabel.classList.add('spec-title-cell', 'write-time');
     thSpecLabel.innerHTML = `
         <div class="spec-cell-inner">
         <div class="spec-label-left">SPEC</div>
@@ -330,6 +330,19 @@ function syncFdcHeaderClasses() {
   });
 }
 
+// DataTables가 분리한 헤더와 본문에 실제 컬럼 너비를 공유한다.
+function syncCylinderStickyColumns(table, wrapper) {
+    const row = table.tBodies[0]?.querySelector("tr");
+    const typeCell = row?.querySelector(".type-col") || table.querySelector("th.type-col");
+    const eqCell = row?.querySelector(".eq-name") || table.querySelector("th.eq-name");
+    const typeWidth = typeCell?.getBoundingClientRect().width || 0;
+    const eqWidth = eqCell?.getBoundingClientRect().width || 0;
+    if (!typeWidth || !eqWidth) return;
+
+    wrapper.style.setProperty("--cylinder-type-width", typeWidth + "px");
+    wrapper.style.setProperty("--cylinder-eq-width", eqWidth + "px");
+}
+
 function finalizeCylinderTable() {
     if ($.fn.DataTable.isDataTable("#cylinder-table-container")) {
         $("#cylinder-table-container").DataTable().destroy();
@@ -345,6 +358,17 @@ function finalizeCylinderTable() {
         info: false,
         dom:'t'
     });
+
+    const table = document.getElementById('cylinder-table-container');
+    const wrapper = table.closest('.cylinder-table-wrapper');
+    if (wrapper) {
+        const syncSticky = () => syncCylinderStickyColumns(table, wrapper);
+        $(table).off(".cylinderSticky")
+            .on("draw.dt.cylinderSticky column-sizing.dt.cylinderSticky column-visibility.dt.cylinderSticky", syncSticky);
+        $(window).off("resize.cylinderSticky").on("resize.cylinderSticky", syncSticky);
+        syncSticky();
+        requestAnimationFrame(syncSticky);
+    }
 
     const $table = $('#cylinder-table-container'); // ✅ 바인딩 대상
 

@@ -248,7 +248,7 @@ td.type-col, th.type-col{
 
 td.eq-name, th.eq-name{
   position: sticky;
-  left: 80px;               /* ✅ Type 폭이 80이면 80으로 맞추기 */
+  left: var(--cylinder-type-width, 80px);
   background: #f0f0f0;
   z-index: 3;
 
@@ -787,4 +787,48 @@ td span[data-inform-icon="1"] {
   background-position: right 6px top 6px;
   background-size: 26px 14px;
   padding-left: 5px; /* 중앙 유지 */
+}
+
+/* 가로 스크롤 고정 컬럼: Type / EQ_Name / WriteTime (SPEC 라벨 포함) */
+.cylinder-table .type-col,
+.cylinder-table .eq-name,
+.cylinder-table .write-time {
+  position: sticky !important;
+  z-index: 2;
+}
+
+.cylinder-table .type-col {
+  left: 0 !important;
+}
+
+.cylinder-table .eq-name {
+  left: var(--cylinder-type-width, 80px) !important;
+}
+
+.cylinder-table .write-time {
+  left: calc(var(--cylinder-type-width, 80px) + var(--cylinder-eq-width, 80px)) !important;
+  background-color: #fff;
+}
+
+.cylinder-table thead th.type-col,
+.cylinder-table thead th.eq-name,
+.cylinder-table thead th.write-time {
+  z-index: 3;
+  background-color: #f0f0f0;
+}
+
+.cylinder-table thead th.spec-title-cell.write-time {
+  background-color: #ffff99;
+}
+
+.cylinder-table.hover-row tbody tr:hover td.type-col,
+.cylinder-table.hover-row tbody tr:hover td.eq-name,
+.cylinder-table.hover-row tbody tr:hover td.write-time {
+  background-color: #f0f8ff;
+}
+
+.cylinder-table tbody tr.selected td.type-col,
+.cylinder-table tbody tr.selected td.eq-name,
+.cylinder-table tbody tr.selected td.write-time {
+  background-color: #cce5ff !important;
 }
