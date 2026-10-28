@@ -1373,6 +1373,69 @@ body.mode-purchase .group3-container .summary-container{
     width: 1660px;
 }
 
+/* 교체 주기 표를 펼치면 기존 이력 표를 아래로 배치하고 전체 영역 스크롤을 제공한다. */
+.parts-history-wrapper .history-tables-stack.cycle-open {
+    max-height: max(240px, calc(100vh - 300px));
+    overflow-y: auto;
+}
+
+.parts-history-wrapper .history-cycle-panel[hidden] {
+    display: none;
+}
+
+.parts-history-wrapper .history-cycle-panel {
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid #cbded0;
+    border-radius: 5px;
+    background: #fff;
+}
+
+.history-cycle-panel h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+}
+
+.history-cycle-note,
+.history-cycle-status {
+    margin: 4px 0 8px;
+    font-size: 13px;
+    color: #555;
+}
+
+.history-cycle-table-scroll {
+    max-height: 230px;
+    overflow: auto;
+}
+
+.history-cycle-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.history-cycle-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #e6f4ea;
+    font-size: 15px;
+}
+
+.history-cycle-table tbody tr:hover {
+    background: #f0f8ff;
+}
+
+.history-tables-stack.cycle-open .parts-history-container .dataTables_scrollBody {
+    max-height: 300px !important;
+}
+
+#history-cycle-btn.active:hover {
+    background-color: #002a66;
+}
+
 .parts-history-wrapper .history-table {
   border-collapse: collapse;
   table-layout: fixed;
