@@ -1,4 +1,5 @@
 import os
+import copy
 import torch
 import torch.nn as nn
 from torchvision import datasets, transforms
@@ -6,7 +7,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-from torchvision.models.resnet import resnet50
+from torchvision.models import resnet50
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import classification_report, precision_score, recall_score, f1_score
 
@@ -33,14 +34,20 @@ image_datasets = {
     'val': datasets.ImageFolder(val_dir, transform=transform)
 }
 dataloaders = {
-    x: DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True)
+    x: DataLoader(image_datasets[x], batch_size=batch_size, shuffle=(x == 'train'))
     for x in ['train', 'val']
 }
 
+if len(image_datasets['train'].classes) != num_classes:
+    raise ValueError(f"학습 폴더는 {num_classes}개 클래스가 필요합니다.")
+if image_datasets['train'].class_to_idx != image_datasets['val'].class_to_idx:
+    raise ValueError("train/valid의 클래스 폴더 이름과 순서가 일치해야 합니다.")
+print("Classes:", image_datasets['train'].class_to_idx)
+
 # ✅ 로컬 ResNet50 기본 가중치 불러오기
 local_weight_path = r'C:\Users\Home\Desktop\transparent_object\resnet50-0676ba61.pth'
-model = resnet50(pretrained=False)
-state_dict = torch.load(local_weight_path, map_location=device)
+model = resnet50(weights=None)
+state_dict = torch.load(local_weight_path, map_location='cpu', weights_only=True)
 model.load_state_dict(state_dict)
 
 # ✅ 마지막 fc 레이어 교체 (2-class 분류)
@@ -53,10 +60,10 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 
 # ✅ EarlyStopping & ModelCheckpoint 설정
-best_acc = 0.0
+best_acc = -1.0
 patience = 5
 counter = 0
-best_model_wts = model.state_dict()
+best_model_wts = copy.deepcopy(model.state_dict())
 
 train_acc_list, val_acc_list = [], []
 
@@ -99,8 +106,9 @@ for epoch in range(num_epochs):
 
             # Model checkpoint 저장
             if epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = model.state_dict()
+                best_acc = epoch_acc.item()
+                counter = 0
+                best_model_wts = copy.deepcopy(model.state_dict())
                 torch.save(model.state_dict(), 'best_resnet50_film_classifier.pth')
 
             # EarlyStopping
@@ -129,6 +137,10 @@ def plot_roc_curve(model, dataloader):
             probs = torch.softmax(outputs, dim=1)[:, 1]
             all_probs.extend(probs.cpu().numpy())
             all_labels.extend(labels.numpy())
+
+    if len(set(all_labels)) < 2:
+        print("ROC 생략: 검증 데이터에 두 클래스가 모두 필요합니다.")
+        return
 
     fpr, tpr, thresholds = roc_curve(all_labels, all_probs)
     roc_auc = auc(fpr, tpr)
@@ -161,7 +173,7 @@ def plot_confusion_matrix(model, dataloader):
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-    cm = confusion_matrix(all_labels, all_preds)
+    cm = confusion_matrix(all_labels, all_preds, labels=list(range(num_classes)))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
                 xticklabels=image_datasets['val'].classes,
                 yticklabels=image_datasets['val'].classes)
@@ -184,16 +196,16 @@ def evaluate_model(model, dataloader):
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-    precision = precision_score(all_labels, all_preds, average='binary')
-    recall = recall_score(all_labels, all_preds, average='binary')
-    f1 = f1_score(all_labels, all_preds, average='binary')
+    precision = precision_score(all_labels, all_preds, average='binary', zero_division=0)
+    recall = recall_score(all_labels, all_preds, average='binary', zero_division=0)
+    f1 = f1_score(all_labels, all_preds, average='binary', zero_division=0)
 
     print(f"\n Precision: {precision:.4f}")
     print(f"Recall: {recall:.4f}")
     print(f"F1 Score: {f1:.4f}")
 
     print("\n Classification Report")
-    print(classification_report(all_labels, all_preds, target_names=image_datasets['val'].classes))
+    print(classification_report(all_labels, all_preds, labels=list(range(num_classes)), target_names=image_datasets['val'].classes, zero_division=0))
 
 
 
