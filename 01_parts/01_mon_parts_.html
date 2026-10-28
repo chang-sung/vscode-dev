@@ -363,6 +363,7 @@
                 <h2 style="margin-top: 0px;">설비 수리 이력</h2>
 
                 <div class="edit-btn-wrapper">
+                    <button id="history-cycle-btn" class="edit-group-btn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="history-cycle-panel">교체 주기</button>
                     <button id="history-add-btn" class="edit-group-btn">이력 편집</button>
 
                     <div class="edit-btn-container" style="display:none">
@@ -373,7 +374,25 @@
                     </div>
                 </div>
 
-                <div class="parts-history-container"></div>
+                <div class="history-tables-stack">
+                    <section id="history-cycle-panel" class="history-cycle-panel" aria-labelledby="history-cycle-title" hidden>
+                        <h3 id="history-cycle-title">파츠 교체 주기</h3>
+                        <p class="history-cycle-note">현재 조회된 이력 기준 · 설비 / Sub Unit / 파츠 분류별 완료된 A급·B급 교체 · 작업시간 간격(일) · 같은 작업시간은 1회로 집계</p>
+                        <p id="history-cycle-status" class="history-cycle-status" role="status"></p>
+                        <div class="history-cycle-table-scroll">
+                            <table class="history-cycle-table">
+                                <thead><tr>
+                                    <th scope="col">설비</th><th scope="col">Sub Unit</th><th scope="col">파츠 분류</th>
+                                    <th scope="col">교체 횟수</th><th scope="col">주기 수</th>
+                                    <th scope="col">이전 교체일</th><th scope="col">최근 교체일</th>
+                                    <th scope="col">최근 주기(일)</th><th scope="col">평균 주기(일)</th>
+                                </tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <div class="parts-history-container"></div>
+                </div>
             </div>
             
 
@@ -434,6 +453,7 @@
     <script src="js/01_parts/scripts_parts_table_essential.js"></script>
     <script src="js/01_parts/scripts_parts_table_line.js"></script>
     <script src="js/01_parts/scripts_parts_table_purchase.js"></script>
+    <script src="js/01_parts/scripts_parts_table_history_parts_cycle.js"></script>
     <script src="js/01_parts/scripts_parts_table_history_parts.js"></script>
     <script src="js/01_parts/scripts_parts_table_history_quality.js"></script>
     <script src="js/01_parts/scripts_parts_table_purchase_popup.js"></script>

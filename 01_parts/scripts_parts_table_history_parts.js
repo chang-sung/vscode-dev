@@ -522,6 +522,7 @@ const PartsHistory = (() => {
     // DataTable
     // =========================
     function finalizeHistoryTable(rowsData) {
+        window.PartsHistoryCycle?.setRows(rowsData || []);
         const $table = $(state.container).find('.history-table');
 
         const dtData = (rowsData || []).map(it => ({
@@ -1736,3 +1737,4 @@ const PartsHistory = (() => {
 })();
 
 window.PartsHistory = PartsHistory;
+
