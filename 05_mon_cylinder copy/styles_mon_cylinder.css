@@ -1,0 +1,790 @@
+html, body {
+    font-family: 'Segoe UI', 'Pretendard', sans-serif;
+    overflow: hidden;  /* ✅ 전체 페이지에서 스크롤 제거 */
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------------------------- 관리자 모드 ip 영역 ---------------------------- */
+
+#user-name-display {
+  position: absolute;
+  top: 50px;
+  right: 45px;
+}
+
+/* ========================== 상단 메뉴 스타일 */
+
+.menu-container {
+  display: flex;
+  width: 1660px;
+  margin-left: -100px;
+  margin-top: -30px;
+  margin-bottom: 5px;
+}
+
+.group1-container h3,
+.group2-container h3,
+.group3-container h3,
+.group4-container h3 {
+  margin: 2px 0 2px 3px;  /* 위쪽 마진 제거 */
+  font-size: 18px;
+  color: #555;
+  border-left: 4px solid #007bff;
+  padding-left: 5px;
+  margin-bottom: 8px;
+}
+
+.group1-container {
+  display: flex;
+  flex-direction: column; /* ✅ 수직 정렬로 변경 */
+  width: 360px;             /* 필요 시 줄바꿈 유도 */
+  height: 115px;
+  gap: 1px;
+  padding-left: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #ffffff;
+}
+
+.group2-container {
+  display: flex;
+  flex-direction: column; /* ✅ 수직 정렬로 변경 */
+  width: 360px;  
+  height: 115px;
+  padding-left: 5px;
+  margin-left: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #ffffff;
+}
+
+.group3-container {
+  display: flex;
+  flex-direction: column; /* ✅ 수직 정렬로 변경 */
+  width: 555px;  
+  height: 115px;
+  padding-left: 5px;
+  margin-left: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #ffffff;
+}
+
+.group4-container {
+  display: flex;
+  flex-direction: column; /* ✅ 수직 정렬로 변경 */
+  width: 345px;  
+  height: 115px;
+  padding-left: 5px;
+  margin-left: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #ffffff;
+}
+
+.menu-container button {
+  padding: 8px 20px;
+  height: 35px;
+  font-size: 14px;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.button_group {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  column-gap: 0px;   /* 좌우 간격 줄임 */
+  row-gap: 5px;      /* 상하 간격 적당히 */
+  padding: 3px;
+  margin-top: 0px;
+  margin-top: -5px;
+}
+
+.bay-group-btn {
+  width: 80px;
+  height: 34px;
+  padding: 6px 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.button2_group {
+  display: flex;            /* 가로 정렬 */
+  flex-direction: row;      /* 기본값이긴 하지만 명시적으로 설정 */
+  gap: 10px;                /* 버튼 간 간격 */
+  align-items: center;      /* 세로 중앙 정렬 */
+  margin-top: 5px;
+  margin-left: 5px;
+}
+
+
+/* ========================== 드롭다운 스타일 */
+
+#shift-select,
+#eqp-select,
+#type-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #fff url("/css/100_utils/caret-dropdown.svg") no-repeat right 2px center;
+  background-size: 16px 16px;
+  font-size: 13px;
+  padding-right: 20px; /* 오른쪽 여유 확보 */
+  height: 25px;
+  width: 100px;
+  border-radius: 4px;
+  border: 2px solid black;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+/* 펼친 옵션 리스트의 각 항목 가운데 정렬 (브라우저별 지원 상이) */
+#shift-select option,
+#eqp-select option,
+#type-select option {
+  text-align: center;
+}
+
+/* ========================== 체크박스 스타일 및 라벨 정렬 */
+
+.filter-groups-wrapper {
+  display: flex;
+  flex-direction: column;  /* 위/아래 배치 */
+  gap: 10px;
+}
+
+.filter_option_group1 {
+  display: flex;
+  flex-direction: row;     /* 내부 가로 정렬 */
+  gap: 10px;
+  margin-left: 5px;
+  margin-left: 5px;
+}
+
+.filter_option_group2 {
+  display: flex;
+  flex-direction: row;     /* 체크박스 가로 정렬 */
+  gap: 10px;
+  margin-left: 5px;
+}
+
+.filter_option_group2 label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  height: 35px;
+}
+
+#abnormal-checkbox,
+#important-checkbox,
+#outlier-checkbox {
+  transform: scale(1.2);  /* 크기 키우기 */
+  margin-right: 5px;
+}
+
+#toggle-spec-edit-btn,
+#export-excel-btn,
+#inform-btn {
+  background-color: #28a745;
+  width: 85px; /* ✅ 원하는 폭으로 조정 */
+  font-size: clamp(10px, 2vw, 14px); /* ✅ 뷰포트에 따라 크기 유연 조정 */
+  padding: 4px 6px;
+  white-space: nowrap;       /* 줄바꿈 방지 */
+  overflow: hidden;          /* 넘치는 글자 숨김 */
+}
+
+#toggle-spec-edit-btn:hover,
+#export-excel-btn:hover,
+#inform-btn:hover {
+  background-color: #0056b3;
+}
+
+/* ========================== 테이블 영역 Wrapper*/
+
+.cylinder-table-wrapper {
+  width: 1660px;
+  white-space: nowrap;
+  margin-left: -100px;
+  position: relative; /* 🔥 sticky 기준 */
+}
+
+td, th {
+  border: none;
+  box-shadow:
+    inset -1px 0 0 black,  /* 왼쪽 세로선 */
+    inset 0 -1px 0 black;  /* 아래쪽 가로선 */
+}
+
+.cylinder-table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border: 1px solid black;
+}
+
+.cylinder-table th,
+.cylinder-table td {
+  font-size: 14px;
+  padding: 4px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+td.type-col, th.type-col{
+  position: sticky;
+  left: 0;
+  background: #f0f0f0;
+  z-index: 4;
+
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  box-sizing: border-box;
+}
+
+td.eq-name, th.eq-name{
+  position: sticky;
+  left: 80px;               /* ✅ Type 폭이 80이면 80으로 맞추기 */
+  background: #f0f0f0;
+  z-index: 3;
+
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  box-sizing: border-box;
+}
+
+.cylinder-table th[data-type="eq"] {
+  width: 82px;
+  min-width: 82px;
+  max-width: 82px;
+}
+
+.cylinder-table th[data-type="time"] {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+}
+
+.cylinder-table th {
+  width: 80px;
+  min-width: 80px;
+}
+
+.cylinder-table thead {
+  background-color: #f0f0f0;
+}
+
+/* 기본: 행 hover */
+.cylinder-table.hover-row tbody tr:hover {
+  background-color: #f0f8ff;
+  cursor: pointer;
+}
+
+/* 선택된 행에 적용될 클래스 */
+.cylinder-table tbody tr.selected {
+  background-color: #cce5ff !important; /* 진한 파랑 느낌 */
+}
+
+.cylinder-table.hover-cell td.inform-hover {
+  transition: background-color 0.2s ease;
+}
+
+/* SPEC CELL 부분 */
+.spec-title-cell {
+  text-align: left;
+  vertical-align: middle;
+  padding: 4px;
+}
+
+.spec-cell-inner {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: 10px;
+}
+
+.spec-label-left {
+  font-weight: bold;
+  font-size: 16px;  /* ← 글자 키움 */
+  min-width: 50px;  /* ← 공간 확보 */
+}
+
+.spec-label-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px; /* ← 상/하한 사이 간격 */
+  font-size: 13px;
+}
+
+/* ✅ Spec 행 배경색 */
+.spec-row-upper th,
+.spec-row-lower th {
+    background-color: #ffff99 !important; /* 상한/하한 행 공통 */
+
+}
+
+/* 상한 Limit (4행) */
+.spec-upper {
+    color: #cc4444 !important; /* 빨간색 */
+    font-weight: bold;
+}
+
+/* 하한 Limit (5행) */
+.spec-lower {
+    color: #0077cc !important; /* 파란색 */
+    font-weight: bold;
+}
+
+thead input.spec-input{
+  text-align: right;
+  width: 45px;
+  margin-bottom: 2px;
+  font-size: 12px;
+  padding: 0px 0px; /* ← 이 부분이 텍스트박스 안쪽 여백 */
+}
+
+/* 상한 Limit 입력창 → 빨간색 */
+thead input.spec-input.upper {
+  color: #cc4444;   /* 빨강 */
+  font-weight: bold;
+}
+
+/* 하한 Limit 입력창 → 파란색 */
+thead input.spec-input.lower {
+  color: #0077cc;   /* 파랑 */
+  font-weight: bold;
+}
+
+/* 1) 중요위치 기본 회색 — 먼저 선언 */
+td.cell-critical {
+  background: #C0C0C0 !important;
+  color: inherit !important;
+}
+
+/* 2) SPEC 덮어쓰기 — 더 아래에 선언 + 결합 선택자까지 */
+td.is-over-upper,
+td.cell-critical.is-over-upper {
+  background: #FFCC00 !important;
+  color: #B80000 !important;
+}
+
+td.is-under-lower,
+td.cell-critical.is-under-lower {
+  background: red !important;
+  color: yellow !important;
+}
+
+/* 존재감 최소화 (필요시) */
+.subgroup-placeholder {
+  border: none !important;
+  color: transparent;
+  background: transparent;
+  padding: 0;
+  height: 0;   /* 데이터테이블 복제헤더와 충돌 없으면 사용 */
+  line-height: 0;
+}
+
+
+/* ========================== 모니터링 */
+.spec_mon_group div {
+  font-size: 16px;
+  margin-left: 2px;
+  font-weight: 500;
+}
+
+.status-wrap {
+  display: flex;
+  gap: 30px; /* 좌/우 간격 */
+}
+
+.status-row-left,
+.status-row-right {
+  display: flex;
+  flex-direction: column; /* 수직 정렬 */
+  gap: 1px;
+
+}
+
+/* 한 줄에 label + value 정렬 */
+.status-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-item .label {
+  font-weight: bold;
+  min-width: 50px;
+}
+
+.status-item .value {
+  font-weight: normal;
+  font-weight: bold;
+}
+
+.status-item .sub-count {
+  font-size: 0.8em;   /* 글자 크기 줄임 */
+  color: #555;        /* (선택) 색을 조금 옅게 */
+  margin-left: 4px;   /* 메인 숫자와 간격 */
+}
+
+.status-btn {
+  font-size: 11px !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  border: none;
+  padding: 2px 2px !important;
+  width: 82px !important;
+  height: 24px !important;
+}
+
+.btn-abnormal-critical {
+  background-color: #C0C0C0 !important;
+  color: black !important;
+  font-weight: bold !important;
+  font-size: 12px !important;
+  padding: 2px 9px;
+  border-radius: 4px;
+}
+
+.btn-abnormal-critical:hover {
+  background-color: #5f5f5f !important;
+  color: white !important;
+}
+
+.btn-abnormal-important {
+  background-color: red !important;
+  color: yellow !important;
+  font-size: 10px;
+  font-weight: bold !important;
+  padding: 2px 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-abnormal-important:hover {
+  background-color: darkred !important;
+  color: white !important;
+}
+
+.btn-abnormal-general {
+  background-color: #FFCC00 !important;
+  color: #B80000 !important;
+  font-size: 10px;
+  font-weight: bold !important;
+  padding: 2px 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-abnormal-general:hover {
+  background-color: #e6b800 !important;
+  color: black !important;
+}
+
+.scroll-focus {
+  outline: 3px solid black;
+  outline-offset: -2px;
+  box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.6);
+  background-color: #ffff99 !important;
+}
+
+
+/* 이상치 셀 구분용 클래스 (선택적으로 스타일 줄 수도 있음) */
+.cell-abnormal-important {
+  background-color: red !important;
+  color: yellow !important;
+}
+
+.cell-abnormal-general {
+  background-color: #FFCC00 !important;
+  color: #B80000 !important;
+}
+
+.summary-cards{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-left: 5px;
+  align-items: center;
+}
+
+.summary-card{
+  position: relative;   /* ✅ 필수 */
+  overflow: hidden;     /* 상단 바 모서리 깔끔 */
+  width: 78px;
+  height: 64px;
+  padding: 4px 2px;
+  border-radius: 5px;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  cursor: pointer;
+  text-align: center;
+}
+
+.summary-card .label{
+  font-size:14px;
+  font-weight:500;
+  margin-top:2px;
+  margin-bottom:0px;
+}
+
+.summary-card .value{
+  font-size:22px;
+  font-weight:600;
+  line-height:1.2;
+}
+
+.summary-card .sub{
+  font-size: 11px;
+  margin-top: 0px;
+  color: #000000;
+}
+
+/* 이상설비 숫자 빨강 */
+.summary-card.st-abn .label,
+.summary-card.st-abn .value {
+  color: #d32f2f;   /* 선명한 레드 */
+}
+
+/* TTTM율 숫자 초록 */
+.summary-card.st-rate .label,
+.summary-card.st-rate .value {
+  color: #2e7d32;   /* 선명한 그린 */
+}
+
+.summary-card.st-total .label,
+.summary-card.st-abn .label,
+.summary-card.st-rate .label {
+  margin-bottom: 14px;   /* 기존 6px → 14px */
+}
+
+/* 클릭 가능한 카드(중요/빠름/느림) */
+.summary-cards .summary-card.summary-click{
+  cursor: pointer;
+  user-select: none;
+  transition: transform .08s ease, box-shadow .12s ease;
+}
+.summary-cards .summary-card.summary-click:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+.summary-cards .summary-card.summary-click:active{
+  transform: translateY(0px);
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+}
+
+/* 상태별 톤 (원하는 색으로 바꿔도 됨) */
+.summary-card.st-imp   { background: #e9e9e9; border-color:#c5c5c5; } /* 중요 */
+.summary-card.st-fast  { background: #ffeaea; border-color:#ffb0b0; } /* 빠름 */
+.summary-card.st-slow  { background: #fff6d6; border-color:#ffe08a; } /* 느림 */
+
+/* ===================== 상단 포인트 바 ===================== */
+/* 상단 포인트 바 */
+.summary-card::before{
+  content:"";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;              /* 94px 대신 전체 너비가 더 자연스러움 */
+  height: 5px;
+  border-radius: 5px 5px 0 0;
+  background: var(--accent, #e5e7eb); /* 기본 fallback */
+  opacity:.95;
+}
+
+/* ===================== 상태별 포인트 컬러 ===================== */
+/* 전체설비 */
+.summary-card.st-total{
+  --accent:#ffffff;   /* neutral gray */
+}
+
+/* 이상설비 */
+.summary-card.st-abn{
+  --accent:#ef4444;   /* red */
+}
+
+/* TTTM율 */
+.summary-card.st-rate{
+  --accent:#16a34a;   /* green */
+}
+
+/* 중요 이상치 */
+.summary-card.st-imp{
+  --accent:#525252;   /* dark gray */
+}
+
+/* 빠름 */
+.summary-card.st-fast{
+  --accent:#ef4444;   /* red */
+}
+
+/* 느림 */
+.summary-card.st-slow{
+  --accent:#f59e0b;   /* amber */
+}
+
+.summary-card.active{
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(16,24,40,.08),
+              0 10px 22px rgba(16,24,40,.14);
+  transform: translateY(-1px);
+}
+
+.summary-card.active::before{
+  height: 6px;
+}
+
+/* ========================== Inform 팝업 (Cylinder ver.) ========================== */
+
+/* 오버레이: DataTables 고정헤더 위로 확실히 올라오게 */
+.popup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  
+}
+
+/* 컨텐트 카드 */
+.popup-content {
+  width: 400px;
+  height: 500px;
+  background: #ffffff;
+  padding: 20px 24px;
+  border-radius: 10px;
+  min-width: 300px;
+  max-width: 350px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* 제목 및 메타 */
+.popup-content h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 20px;
+  text-align: center;
+}
+
+/* 입력 라인: 데스크탑에선 2열 정렬, 모바일은 1열 */
+.popup-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+.popup-row label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+  font-size: 14px;
+}
+
+.popup-row input {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.popup-row textarea {
+  height: 200px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 버튼 영역 */
+.popup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* 주요 버튼 컬러: 페이지 톤(#1976d2 계열)과 일치 */
+.popup-submit {
+  background-color: #28a745;
+  color: white;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.popup-cancel,
+.popup-delete {
+  background-color: #ccc;
+  color: #333;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup-submit:hover {
+  background-color: #218838;
+}
+
+.popup-cancel:hover,
+.popup-delete:hover {
+  background-color: #999;
+}
+
+
+/* ========================== 셀 하이라이트(Inform 모드) ========================== */
+
+/* Inform 모드 진입 시 */
+.inform-mode-active td { cursor: crosshair; }
+
+/* 셀 hover */
+.inform-hover:hover {
+  outline: 2px dashed #9ca3af; /* gray-400 */
+  outline-offset: -2px;
+}
+
+/* 선택된 셀 */
+.selected-td {
+  outline: 2px solid #1976d2 !important;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px rgba(25, 118, 210, 0.25);
+}
+
+/* 📝 아이콘 */
+td span[data-inform-icon="1"] {
+  margin-left: 4px;
+  cursor: pointer;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* ========================== FDC 아이콘 ========================== */
+/* FDC 아이콘 절대 위치 스타일 */
+
+/* 헤더(th)에만 아이콘. DataTables 복제 헤더도 포함 */
+#cylinder-table-container thead th.has-fdc,
+.dataTables_scrollHead thead th.has-fdc,
+.fixedHeader-floating thead th.has-fdc {
+  position: relative;
+  text-align: center;
+  vertical-align: middle;
+  background-image: url('/css/05_mon_cylinder/fdc_img.png');
+  background-repeat: no-repeat;
+  background-position: right 6px top 6px;
+  background-size: 26px 14px;
+  padding-left: 5px; /* 중앙 유지 */
+}
