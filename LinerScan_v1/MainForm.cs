@@ -552,9 +552,6 @@ namespace LinerScan
                 LogText("❌ TCP 전송 예외: " + ex.Message);
             }
 
-            // ✅ crop_image(전체 10장) 저장은 기존 유지
-            SaveImagesAll(cropped1List, cropped2List, roiIndex);
-
             // ✅ 결과 문자열 반환
             string resultString = $"[ROI_{roiIndex}_A] 예측: {mode1}\r\n[ROI_{roiIndex}_B] 예측: {mode2}";
 
@@ -626,40 +623,6 @@ namespace LinerScan
                 Label_2B_Juge.Text = message.Split(new[] { ": " }, StringSplitOptions.None).Last();
         }
 
-
-        private void SaveImagesAll(List<Bitmap> cropped1List, List<Bitmap> cropped2List, int roiIndex)
-        {
-            if (roiIndex <= 0) return;
-
-            string baseDir = @"D:\LinerScan_Logs\crop_image";
-            string year = DateTime.Now.ToString("yyyy");
-            string month = DateTime.Now.ToString("MM");
-            string day = DateTime.Now.ToString("dd");
-
-            string imageDir = Path.Combine(baseDir, year, month, day);
-
-            if (!Directory.Exists(imageDir))
-                Directory.CreateDirectory(imageDir);
-
-            string timeFilePart = DateTime.Now.ToString("yyMMdd_HHmmss");
-
-            for (int i = 0; i < cropped1List.Count; i++)
-            {
-                if (cropped1List[i] != null)
-                {
-                    string imageFileNameA = $"{timeFilePart}_{roiIndex}열_A_{i + 1:00}.jpg";
-                    string imagePathA = Path.Combine(imageDir, imageFileNameA);
-                    cropped1List[i].Save(imagePathA, System.Drawing.Imaging.ImageFormat.Jpeg);
-                }
-
-                if (cropped2List[i] != null)
-                {
-                    string imageFileNameB = $"{timeFilePart}_{roiIndex}열_B_{i + 1:00}.jpg";
-                    string imagePathB = Path.Combine(imageDir, imageFileNameB);
-                    cropped2List[i].Save(imagePathB, System.Drawing.Imaging.ImageFormat.Jpeg);
-                }
-            }
-        }
 
         private void SaveOriginalFrame(Bitmap originalFrame, string cameraName)
         {
