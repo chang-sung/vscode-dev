@@ -11,7 +11,7 @@ namespace LinerScan.Cameras
         private Mat frame;
         private long timestamp;
         private bool disposed;
-        private const double MaximumAgeSeconds = 2;
+        private const double MaximumAgeSeconds = 1;
 
         /// <summary>
         /// 입력 Mat을 복제하여 최신 프레임을 교체하고 수신 시각을 기록합니다.
