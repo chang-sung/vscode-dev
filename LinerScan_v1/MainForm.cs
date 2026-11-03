@@ -526,7 +526,7 @@ namespace LinerScan
             LogText($"[ROI_{roiIndex}_A] 예측: {mode1}");
             LogText($"[ROI_{roiIndex}_B] 예측: {mode2}");
 
-            // ✅ 최종 이미지 저장 (cap_image)
+            // ✅ 최종 이미지 저장 (result_image)
             var (pathA, pathB) = SaveImagesAndGetPaths(
                 cropped1List.Last(),
                 cropped2List.Last(),
@@ -535,7 +535,7 @@ namespace LinerScan
                 mode2
             );
 
-            // ✅ cap_image에 저장된 파일만 TCP 전송
+            // ✅ result_image에 저장된 파일만 TCP 전송
             try
             {
                 System.Threading.Tasks.Task.Run(() =>
@@ -654,7 +654,7 @@ namespace LinerScan
         {
             if (roiIndex <= 0) return (null, null);
 
-            string baseDir = @"D:\LinerScan_Logs\cap_image";
+            string baseDir = @"D:\LinerScan_Logs\result_image";
             string year = DateTime.Now.ToString("yyyy");
             string month = DateTime.Now.ToString("MM");
             string day = DateTime.Now.ToString("dd");
