@@ -227,12 +227,11 @@ namespace LinerScan
                 : insp2 == 1 && !inspectionFailedAwaitingReset[2] ? 2 : 0;
             if (number == 0 || cameraManager == null || !cameraManager.IsReady(number)) return;
 
-
                 // ROI 설정 읽기, 촬영/매칭, 추론, 이미지 저장 예외는 해당 검사만 실패 처리합니다.
                 LoadRoiFromConfig();
                 string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
                 CheckPlcStop();
-            }
+            
             if (result.StartsWith("❌"))
             {
                 inspectionFailedAwaitingReset[number] = true;
