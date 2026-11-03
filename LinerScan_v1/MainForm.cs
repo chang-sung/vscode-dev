@@ -153,15 +153,10 @@ namespace LinerScan
             if (plcStop.Wait(milliseconds)) throw new OperationCanceledException();
         }
 
-        private sealed class PlcCommunicationException : InvalidOperationException
-        {
-            public PlcCommunicationException(string message) : base(message) { }
-        }
-
         private void CheckPlcResult(int result, string operation)
         {
             if (result != 0)
-                throw new PlcCommunicationException(operation + " 실패: 0x" + result.ToString("X8"));
+                throw new InvalidOperationException(operation + " 실패: 0x" + result.ToString("X8"));
         }
 
         private void SetPlcDevice(string device, int value)
@@ -232,26 +227,11 @@ namespace LinerScan
                 : insp2 == 1 && !inspectionFailedAwaitingReset[2] ? 2 : 0;
             if (number == 0 || cameraManager == null || !cameraManager.IsReady(number)) return;
 
-            string result;
-            try
-            {
+
                 // ROI 설정 읽기, 촬영/매칭, 추론, 이미지 저장 예외는 해당 검사만 실패 처리합니다.
                 LoadRoiFromConfig();
-                result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
+                string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
                 CheckPlcStop();
-            }
-            catch (Exception ex) when (
-                !(ex is OperationCanceledException && plcStop.IsSet) &&
-                !(ex is PlcCommunicationException) &&
-                !(ex is COMException) &&
-                !(ex is InvalidComObjectException))
-            {
-                inspectionFailedAwaitingReset[number] = true;
-                LogText(number + "열 검사 처리 오류 (PLC 감시 계속): " +
-                    ex.GetType().Name + ": " + ex.Message +
-                    " 시작 비트 OFF 후 다음 요청 대기.");
-                // 이미 전송된 PLC 값은 유지하며 추가 완료 응답을 보내지 않습니다.
-                return;
             }
             if (result.StartsWith("❌"))
             {
@@ -271,7 +251,7 @@ namespace LinerScan
         {
             _cropper = new Cropper
             {
-                DefaultMinScore = 0.70,
+                DefaultMinScore = 0.65,
                 DefaultExtraDown = 5,
                 DefaultExtraX = -30
             };
