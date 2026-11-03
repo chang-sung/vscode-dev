@@ -1,5 +1,4 @@
 using LinerScan.Imaging;
-using LinerScan.Networking;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System;
@@ -8,7 +7,6 @@ using System.IO;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 
-
 namespace LinerScan
 {
     public partial class RoiForm : Form
@@ -16,8 +14,8 @@ namespace LinerScan
         public Rectangle SelectedRoi1 { get; private set; }
         public Rectangle SelectedRoi2 { get; private set; }
 
-        private Rectangle roi1_A = new Rectangle(10, 10, 165, 70);
-        private Rectangle roi1_B = new Rectangle(30, 30, 165, 70);
+        private Rectangle roi1_A = new Rectangle(453, 238, 300, 500);
+        private Rectangle roi1_B = new Rectangle(1003, 237, 300, 500);
 
         private bool isDragging = false;
         private int draggingRoiIndex = 0;
@@ -31,41 +29,22 @@ namespace LinerScan
         private readonly int roiIndex;
         private int hoverRoiIndex = 0;
 
-        private bool isDraggingCrop = false;
-        private int draggingCropIndex = 0; // 1=A, 2=B
-        private System.Drawing.Point cropDragOffset;
-
-        private System.Drawing.Point markCenterA = System.Drawing.Point.Empty;
-        private System.Drawing.Point markCenterB = System.Drawing.Point.Empty;
-
-        private int cropOffsetXA = 0;
-        private int cropOffsetYA = 0;
-        private int cropOffsetXB = 0;
-        private int cropOffsetYB = 0;
-        private bool isMarkFindMode = false;
-        private bool isCropSetMode = false;
-
         private string roiConfigPath = "config.json";
-
-
         private readonly Func<Mat> _getLatestFrame;
 
-        // ✅ mark search 결과 crop 박스(165x75) 표시용
-        private Rectangle cropBoxA = Rectangle.Empty;
-        private Rectangle cropBoxB = Rectangle.Empty;
-        private string cropInfoA = "";
-        private string cropInfoB = "";
-
-        // ✅ Cropper 참조 (MainForm에서 전달 or 여기서 생성)
-        private Cropper _cropper;
-        private OpenCvSharp.Size finalCropSize = new OpenCvSharp.Size(165, 70);
-
-        public RoiForm(int index, Func<Mat> getLatestFrame, Cropper cropper)
+        public RoiForm(int index, Func<Mat> getLatestFrame)
         {
             InitializeComponent();
             this.roiIndex = index;
             this._getLatestFrame = getLatestFrame;
-            this._cropper = cropper;
+            if (index == 2)
+            {
+                roi1_A = new Rectangle(453, 400, 300, 500);
+                roi1_B = new Rectangle(1003, 400, 300, 500);
+            }
+            // 디자이너에 남아 있는 이전 마크 검색 버튼은 사용하지 않습니다.
+            btn_mark_search.Visible = false;
+            btn_mark_search.Enabled = false;
 
             this.Width = 1600;
             this.Height = 1200;
@@ -85,8 +64,6 @@ namespace LinerScan
             frameTimer.Interval = 100;
             frameTimer.Tick += FrameTimer_Tick;
             frameTimer.Start();
-
-            btn_mark_search.Click += btn_mark_search_Click;
         }
 
         private void FrameTimer_Tick(object sender, EventArgs e)
@@ -147,23 +124,7 @@ namespace LinerScan
 
         private void pb_roi1_MouseDown(object sender, MouseEventArgs e)
         {
-            // Crop A 드래그
-            if (!cropBoxA.IsEmpty && cropBoxA.Contains(e.Location))
-            {
-                isDraggingCrop = true;
-                draggingCropIndex = 1;
-                cropDragOffset = new System.Drawing.Point(e.X - cropBoxA.X, e.Y - cropBoxA.Y);
-                return;
-            }
-
-            // Crop B 드래그
-            if (!cropBoxB.IsEmpty && cropBoxB.Contains(e.Location))
-            {
-                isDraggingCrop = true;
-                draggingCropIndex = 2;
-                cropDragOffset = new System.Drawing.Point(e.X - cropBoxB.X, e.Y - cropBoxB.Y);
-                return;
-            }
+            if (!isSettingROIs || e.Button != MouseButtons.Left) return;
 
             // 기존 ROI 드래그
             if (roi1_A.Contains(e.Location))
@@ -178,57 +139,10 @@ namespace LinerScan
                 draggingRoiIndex = 2;
                 dragOffset = new System.Drawing.Point(e.X - roi1_B.X, e.Y - roi1_B.Y);
             }
-
-            if (isCropSetMode && !cropBoxA.IsEmpty && cropBoxA.Contains(e.Location))
-            {
-                isDraggingCrop = true;
-                draggingCropIndex = 1;
-                cropDragOffset = new System.Drawing.Point(e.X - cropBoxA.X, e.Y - cropBoxA.Y);
-                return;
-            }
-
-            if (isCropSetMode && !cropBoxB.IsEmpty && cropBoxB.Contains(e.Location))
-            {
-                isDraggingCrop = true;
-                draggingCropIndex = 2;
-                cropDragOffset = new System.Drawing.Point(e.X - cropBoxB.X, e.Y - cropBoxB.Y);
-                return;
-            }
         }
 
         private void pb_roi1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isDraggingCrop)
-            {
-                if (draggingCropIndex == 1)
-                {
-                    cropBoxA.X = Math.Max(0, Math.Min(pb_roi1.Width - cropBoxA.Width, e.X - cropDragOffset.X));
-                    cropBoxA.Y = Math.Max(0, Math.Min(pb_roi1.Height - cropBoxA.Height, e.Y - cropDragOffset.Y));
-
-                    if (!markCenterA.IsEmpty)
-                    {
-                        cropOffsetXA = cropBoxA.X - markCenterA.X;
-                        cropOffsetYA = cropBoxA.Y - markCenterA.Y;
-                        cropInfoA = $"A Offset X:{cropOffsetXA}, Y:{cropOffsetYA}";
-                    }
-                }
-                else if (draggingCropIndex == 2)
-                {
-                    cropBoxB.X = Math.Max(0, Math.Min(pb_roi1.Width - cropBoxB.Width, e.X - cropDragOffset.X));
-                    cropBoxB.Y = Math.Max(0, Math.Min(pb_roi1.Height - cropBoxB.Height, e.Y - cropDragOffset.Y));
-
-                    if (!markCenterB.IsEmpty)
-                    {
-                        cropOffsetXB = cropBoxB.X - markCenterB.X;
-                        cropOffsetYB = cropBoxB.Y - markCenterB.Y;
-                        cropInfoB = $"B Offset X:{cropOffsetXB}, Y:{cropOffsetYB}";
-                    }
-                }
-
-                pb_roi1.Invalidate();
-                return;
-            }
-
             if (!isSettingROIs) return;
 
             if (roi1_A.Contains(e.Location))
@@ -270,9 +184,6 @@ namespace LinerScan
         {
             isDragging = false;
             draggingRoiIndex = 0;
-
-            isDraggingCrop = false;
-            draggingCropIndex = 0;
         }
 
         private void pb_roi1_Paint(object sender, PaintEventArgs e)
@@ -300,23 +211,6 @@ namespace LinerScan
                 }
             }
 
-            // ✅ 최종 crop 박스(165x75) 표시 (초록)
-            using (Pen cropPen = new Pen(Color.Lime, 3))
-            using (Font f = new Font("Arial", 12))
-            using (Brush b = new SolidBrush(Color.Lime))
-            {
-                if (!cropBoxA.IsEmpty)
-                {
-                    e.Graphics.DrawRectangle(cropPen, cropBoxA);
-                    e.Graphics.DrawString(cropInfoA, f, b, cropBoxA.X, cropBoxA.Y - 20);
-                }
-
-                if (!cropBoxB.IsEmpty)
-                {
-                    e.Graphics.DrawRectangle(cropPen, cropBoxB);
-                    e.Graphics.DrawString(cropInfoB, f, b, cropBoxB.X, cropBoxB.Y - 20);
-                }
-            }
         }
 
         private void LoadRoiConfig()
@@ -327,26 +221,17 @@ namespace LinerScan
                 {
                     var json = File.ReadAllText(roiConfigPath);
                     var config = JsonConvert.DeserializeObject<RoiConfig>(json);
+                    if (config == null) return;
 
                     if (roiIndex == 1)
                     {
                         roi1_A = config.Roi1_A;
                         roi1_B = config.Roi1_B;
-
-                        cropOffsetXA = config.Roi1_A_CropOffsetX;
-                        cropOffsetYA = config.Roi1_A_CropOffsetY;
-                        cropOffsetXB = config.Roi1_B_CropOffsetX;
-                        cropOffsetYB = config.Roi1_B_CropOffsetY;
                     }
                     else if (roiIndex == 2)
                     {
                         roi1_A = config.Roi2_A;
                         roi1_B = config.Roi2_B;
-
-                        cropOffsetXA = config.Roi2_A_CropOffsetX;
-                        cropOffsetYA = config.Roi2_A_CropOffsetY;
-                        cropOffsetXB = config.Roi2_B_CropOffsetX;
-                        cropOffsetYB = config.Roi2_B_CropOffsetY;
                     }
                 }
             }
@@ -359,30 +244,19 @@ namespace LinerScan
                 RoiConfig config;
 
                 if (File.Exists(roiConfigPath))
-                    config = JsonConvert.DeserializeObject<RoiConfig>(File.ReadAllText(roiConfigPath));
+                    config = JsonConvert.DeserializeObject<RoiConfig>(File.ReadAllText(roiConfigPath)) ?? new RoiConfig();
                 else
                     config = new RoiConfig();
-
 
                 if (roiIndex == 1)
                 {
                     config.Roi1_A = roi1_A;
                     config.Roi1_B = roi1_B;
-
-                    config.Roi1_A_CropOffsetX = cropOffsetXA;
-                    config.Roi1_A_CropOffsetY = cropOffsetYA;
-                    config.Roi1_B_CropOffsetX = cropOffsetXB;
-                    config.Roi1_B_CropOffsetY = cropOffsetYB;
                 }
                 else if (roiIndex == 2)
                 {
                     config.Roi2_A = roi1_A;
                     config.Roi2_B = roi1_B;
-
-                    config.Roi2_A_CropOffsetX = cropOffsetXA;
-                    config.Roi2_A_CropOffsetY = cropOffsetYA;
-                    config.Roi2_B_CropOffsetX = cropOffsetXB;
-                    config.Roi2_B_CropOffsetY = cropOffsetYB;
                 }
 
                 var json = JsonConvert.SerializeObject(config, Formatting.Indented);
@@ -404,125 +278,9 @@ namespace LinerScan
             }
         }
 
+        // 기존 Designer.cs의 이벤트 연결과 호환하기 위해 유지합니다.
         private void btn_mark_search_Click(object sender, EventArgs e)
         {
-            // cropper/프레임 체크
-            if (_cropper == null)
-            {
-                MessageBox.Show("Cropper가 연결되지 않았습니다. (Form1에서 전달 필요)");
-                return;
-            }
-
-            if (frameMat == null || frameMat.Empty())
-            {
-                MessageBox.Show("현재 프레임이 없습니다.");
-                return;
-            }
-
-            // 현재 프레임 clone(안전)
-            Mat frameClone = frameMat.Clone();
-
-            try
-            {
-                // ROISetting에서는 roi1_A, roi1_B가 현재 화면의 "큰 검색 ROI"
-                SearchAndSetCropBoxes(frameClone);
-
-                // 화면 갱신
-                pb_roi1.Invalidate();
-            }
-            finally
-            {
-                frameClone.Dispose();
-            }
         }
-
-        private void SearchAndSetCropBoxes(Mat frame)
-        {
-            // 결과 초기화
-            cropBoxA = Rectangle.Empty;
-            cropBoxB = Rectangle.Empty;
-            cropInfoA = "";
-            cropInfoB = "";
-
-            // A
-            SetCropBoxForOneRoi(frame, roi1_A, true);
-
-            // B
-            SetCropBoxForOneRoi(frame, roi1_B, false);
-        }
-
-        private void SetCropBoxForOneRoi(Mat frame, Rectangle searchRoi, bool isA)
-        {
-            Rect cropRect;
-            string usedMark;
-            double score;
-
-            System.Drawing.Point markCenter;
-
-            bool ok = _cropper.TryFindCropRectWithAnyMark(
-                frame,
-                searchRoi,
-                finalCropSize,
-                out cropRect,
-                out markCenter,
-                out usedMark,
-                out score,
-                null,
-                false,
-                null,
-                null
-            );
-
-            if (!ok)
-            {
-                if (isA)
-                    cropInfoA = "A: mark not found";
-                else
-                    cropInfoB = "B: mark not found";
-                return;
-            }
-
-            int savedOffsetX = isA ? cropOffsetXA : cropOffsetXB;
-            int savedOffsetY = isA ? cropOffsetYA : cropOffsetYB;
-
-            Rectangle r;
-
-            if (savedOffsetX != 0 || savedOffsetY != 0)
-            {
-                r = new Rectangle(
-                    markCenter.X + savedOffsetX,
-                    markCenter.Y + savedOffsetY,
-                    finalCropSize.Width,
-                    finalCropSize.Height
-                );
-            }
-            else
-            {
-                r = new Rectangle(cropRect.X, cropRect.Y, cropRect.Width, cropRect.Height);
-            }
-
-            if (isA)
-            {
-                cropBoxA = r;
-                markCenterA = markCenter;
-
-                cropOffsetXA = cropBoxA.X - markCenterA.X;
-                cropOffsetYA = cropBoxA.Y - markCenterA.Y;
-
-                cropInfoA = $"A: {usedMark} Offset X:{cropOffsetXA}, Y:{cropOffsetYA}";
-            }
-            else
-            {
-                cropBoxB = r;
-                markCenterB = markCenter;
-
-                cropOffsetXB = cropBoxB.X - markCenterB.X;
-                cropOffsetYB = cropBoxB.Y - markCenterB.Y;
-
-                cropInfoB = $"B: {usedMark} Offset X:{cropOffsetXB}, Y:{cropOffsetYB}";
-            }
-        }
-
-        
     }
 }

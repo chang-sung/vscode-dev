@@ -41,7 +41,6 @@ namespace LinerScan
         private bool shutdownComplete;
 
         private CameraManager cameraManager;
-        private Cropper _cropper;
         private readonly Timer cameraStatusTimer = new Timer { Interval = 500 };
         private readonly DateTime?[] cameraMissingSince = new DateTime?[3];
         private readonly DateTime[] lastReconnectAttempt = new DateTime[3];
@@ -227,7 +226,7 @@ namespace LinerScan
                 : insp2 == 1 && !inspectionFailedAwaitingReset[2] ? 2 : 0;
             if (number == 0 || cameraManager == null || !cameraManager.IsReady(number)) return;
 
-                // ROI 설정 읽기, 촬영/매칭, 추론, 이미지 저장 예외는 해당 검사만 실패 처리합니다.
+                // ROI 설정 읽기, 촬영/크롭, 추론, 이미지 저장 예외는 해당 검사만 실패 처리합니다.
                 LoadRoiFromConfig();
                 string result = number == 1 ? RunInference1FromPLC() : RunInference2FromPLC();
                 CheckPlcStop();
@@ -248,21 +247,9 @@ namespace LinerScan
 
         private void InitializeCameras()
         {
-            _cropper = new Cropper
-            {
-                DefaultMinScore = 0.65,
-                DefaultExtraDown = 5,
-                DefaultExtraX = -30
-            };
             cameraManager = new CameraManager(LogText);
             try
             {
-                string templatesDir = Path.Combine(Application.StartupPath, "templates");
-                _cropper.LoadMarks(templatesDir, "mark*.png");
-                LogText($"템플릿 마크 로드: {_cropper.MarkNames.Count}개");
-                if (_cropper.MarkNames.Count == 0)
-                    LogText($"템플릿 마크 없음");
-
                 var devices = new CameraDeviceCatalog().GetDevices();
                 var deviceList = string.Join(Environment.NewLine + Environment.NewLine,
                     devices.Select(d => d.Name + Environment.NewLine + d.DevicePath));
@@ -340,44 +327,16 @@ namespace LinerScan
         {
             return cameraManager?.GetLatestFrameClone(cameraNumber);
         }
-        private Bitmap CropByMarksToBitmap(Mat frame, Rectangle searchRoi, string tagForLog, out string usedMark, out double score)
+        private Bitmap CropRoiToBitmap(Mat frame, Rectangle roi, string tagForLog)
         {
-            usedMark = null;
-            score = 0;
-
-            if (_cropper == null) return null;
-
-            string mk;
-            double sc;
-
-            Mat cropMat = _cropper.TryCropWithAnyMark(
-                frame,
-                searchRoi,
-                new OpenCvSharp.Size(165, 70),
-                out mk,
-                out sc,
-                null,
-                false,   // useCanny (필요하면 true)
-                null,
-                null
-            );
-
-            if (cropMat == null)
+            using (var cropMat = Cropper.CropRoi(frame, roi))
             {
-                LogText("❌ [" + tagForLog + "] mark 매칭 실패");
-                return null;
-            }
-
-            try
-            {
-                usedMark = mk;
-                score = sc;
-                LogText("✅ [" + tagForLog + "] " + usedMark + " score=" + score.ToString("F2"));
+                if (cropMat == null)
+                {
+                    LogText("❌ [" + tagForLog + "] ROI가 비어 있거나 프레임 범위를 벗어났습니다: " + roi);
+                    return null;
+                }
                 return BitmapConverter.ToBitmap(cropMat);
-            }
-            finally
-            {
-                cropMat.Dispose();
             }
         }
 
@@ -444,10 +403,8 @@ namespace LinerScan
                                 SaveOriginalFrame(original, "camera" + number);
                         }
 
-                        string markA, markB;
-                        double scoreA, scoreB;
-                        using (var bmpA = CropByMarksToBitmap(frameMat, roiA, "ROI" + number + "_A", out markA, out scoreA))
-                        using (var bmpB = CropByMarksToBitmap(frameMat, roiB, "ROI" + number + "_B", out markB, out scoreB))
+                        using (var bmpA = CropRoiToBitmap(frameMat, roiA, "ROI" + number + "_A"))
+                        using (var bmpB = CropRoiToBitmap(frameMat, roiB, "ROI" + number + "_B"))
                         {
                             if (bmpA == null || bmpB == null || i == 0)
                             {
@@ -462,7 +419,7 @@ namespace LinerScan
                     WaitForCapture(200);
                 }
                 if (cropped1List.Count == 0 || cropped2List.Count == 0)
-                    return "❌ crop 결과가 없습니다(템플릿 매칭 실패 가능).";
+                    return "❌ ROI crop 결과가 없습니다. ROI 위치/크기와 카메라 프레임을 확인하세요.";
                 CheckPlcStop();
                 return RunModelWithPlcControl(cropped1List, cropped2List, number);
             }
@@ -618,19 +575,9 @@ namespace LinerScan
 
         private void OpenRoiSettings(int number)
         {
-            if (closing || _cropper == null) return;
-            // 설정용과 검사용의 마크 이미지 및 매칭 잠금을 분리합니다.
-            using (var roiCropper = new Cropper
-            {
-                DefaultMinScore = _cropper.DefaultMinScore,
-                DefaultExtraDown = _cropper.DefaultExtraDown,
-                DefaultExtraX = _cropper.DefaultExtraX
-            })
-            {
-                roiCropper.LoadMarks(Path.Combine(Application.StartupPath, "templates"), "mark*.png");
-                using (var roiForm = new RoiForm(number, () => GetLatestFrameClone(number), roiCropper))
-                    roiForm.ShowDialog(this);
-            }
+            if (closing) return;
+            using (var roiForm = new RoiForm(number, () => GetLatestFrameClone(number)))
+                roiForm.ShowDialog(this);
         }
 
         private void LogText(string message)
@@ -915,9 +862,6 @@ namespace LinerScan
             cameraManager?.Dispose();
             cameraManager = null;
 
-            _cropper?.Dispose();
-            _cropper = null;
-
             classifier?.Dispose();
             classifier = null;
 
@@ -941,3 +885,4 @@ namespace LinerScan
         
     }
 }
+
