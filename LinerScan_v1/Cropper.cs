@@ -25,7 +25,7 @@ namespace LinerScan.Imaging
             }
         }
 
-        public double DefaultMinScore { get; set; } = 0.70;
+        public double DefaultMinScore { get; set; } = 0.65;
         public int DefaultExtraDown { get; set; } = 5;
         public int DefaultExtraX { get; set; } = 0;
 
