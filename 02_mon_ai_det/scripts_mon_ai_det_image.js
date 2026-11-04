@@ -280,7 +280,7 @@ function initAiDetImagePreview() {
             left: -Math.round((naturalWidth - width) * x) + 'px',
             top: -Math.round((naturalHeight - height) * y) + 'px'
         });
-        caption.textContent = '원본 1:1 · ' + naturalWidth + ' × ' + naturalHeight
+        caption.textContent = '원본 이미지 · ' + naturalWidth + ' × ' + naturalHeight
             + (width < naturalWidth || height < naturalHeight ? ' · 마우스를 움직여 확인' : '');
         preview.hidden = false;
     }
