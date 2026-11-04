@@ -121,10 +121,12 @@ function renderAiDetImageSequences(sequences) {
         const inspectionGroups = [
             {
                 label: '1차 검사',
+                comment: '(박리 알람 발생 검사)',
                 imgs: images.slice(0, 2)
             },
             {
                 label: '2차 검사',
+                comment: '(이형지 자동 폐기 후 검사)',
                 imgs: images.slice(2, 4)
             }
         ];
@@ -137,7 +139,10 @@ function renderAiDetImageSequences(sequences) {
 
             const $box = $(`
                 <div class="ai-inspection-box">
-                    <div class="${labelClass}">${group.label}</div>
+                    <div class="${labelClass}">
+                        <div>${group.label}</div>
+                        <div class="ai-inspection-comment">${escapeHtml(group.comment)}</div>
+                    </div>
                     <div class="ai-inspection-images"></div>
                 </div>
             `);
@@ -150,8 +155,8 @@ function renderAiDetImageSequences(sequences) {
                 const isDetected = String(img.result).trim() === '1';
 
                 const resultText = isDetected
-                    ? '이형지 감지'
-                    : '이형지 없음';
+                    ? 'AI 추론 결과 : 이형지 감지'
+                    : 'AI 추론 결과 : 이형지 없음';
 
                 const cardClass = isDetected
                     ? 'ai-image-card detected'
