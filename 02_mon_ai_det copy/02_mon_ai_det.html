@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLM Web Monitoring System</title>
+    <link rel="stylesheet" href="css/100_utils/styles.css">
+    <link rel="stylesheet" href="css/100_utils/flatpickr.min.css">
+    <link rel="stylesheet" href="css/02_mon_ai_det/styles_mon_ai_det.css">
+    
+    <script src="js/100_utils/jquery.min.js"></script>
+    <script src="js/100_utils/dataTables.min.js"></script>
+    <script src="js/100_utils/echarts.min.js"></script>
+    <script src="js/100_utils/xlsx.full.min.js"></script>
+    <script src="js/100_utils/flatpickr.min.js"></script>
+    <script src="js/100_utils/ko.js"></script>
+    <script src="js/100_utils/dataTable.fixedHeader.min.js"></script>
+    <script src="js/100_utils/dataTable.fixedColumns.min.js"></script>
+    <script src="js/100_utils/Sortable.min.js"></script> 
+</head>
+
+<body>
+    <h1 class="top-container">설비 AI 모니터링 시스템</h1>
+
+    <!-- 사이드바 -->
+    <div id="sidebar-placeholder"></div>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="container">
+        <!-- 버튼 영역 -->
+        <div class="menu-container">
+            <div class="group1-container">
+                <h3>상세 조회</h3>
+                <div class="button_group row-1">
+                    <button class="bay-group-btn" data-group="ai_det">이형지 감지</button>
+        
+                </div>
+            </div>
+
+            <div class="group2-container">
+                <h3>필터링 옵션</h3>
+                <div class="ai-det-filter-container">
+                    <!-- AI 이형지 감지 모니터링 -->
+                    <div class="group2-inner-1">
+
+                        <select id="bay-division-select">
+                            <option value="all-groups">Bay 전체보기</option>
+                            <option value="BAY6">BAY6</option>
+                            <option value="BAY7">BAY7</option>
+                            <option value="BAY8">BAY8</option>
+                            <option value="BAY9">BAY9</option>
+                            <option value="BAY10">BAY10</option>
+                            <option value="BAY11">BAY11</option>
+                            <option value="BAY12">BAY12</option>
+                        </select>
+
+                    </div>
+                    <div class="group2-inner-2">
+                     
+                    </div>
+
+                </div>
+                
+            </div>
+
+            <div class="group3-container">
+                <h3>모니터링</h3>
+                <div class="summary-container">
+                    <!-- ✅ 버튼 영역 -->
+                </div>
+            </div>
+
+            <div class="group4-container">
+                <h3>추가 옵션</h3>
+                <div class="button_group"> 
+
+                </div>
+            </div> 
+        </div>
+
+        <!-- 메인 영역 -->
+        <div class="main-wrapper">
+            
+            <!-- AI 이형지 감지 모니터링 -->
+            <div class="mon-ai-det-wrapper">
+                <div class="inference-image-container"></div>
+
+            </div>
+            
+        </div>
+
+    </div>
+    
+    <script>
+        $(function() {
+            // sidebar.html 로드 및 초기화
+            $("#sidebar-placeholder").load("sidebar.html", function() {
+                initSidebar(); // 스크립트 초기화 함수 호출
+            });
+        });
+
+        
+    </script>
+
+    <script src="js/02_mon_ai_det/scripts_mon_ai_det_init.js"></script>
+    <script src="js/02_mon_ai_det/scripts_mon_ai_det.js"></script>
+    <script src="js/02_mon_ai_det/scripts_mon_ai_det_image.js"></script>
+
+</body>
+</html>
