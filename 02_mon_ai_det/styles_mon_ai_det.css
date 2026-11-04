@@ -252,6 +252,13 @@ html, body {
     margin-bottom: 8px;
 }
 
+.ai-inspection-comment {
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.4;
+}
+
 .ai-inspection-label.second {
     background: #ddf5e2;
     color: #008b58;
