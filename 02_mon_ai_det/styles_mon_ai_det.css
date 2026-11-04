@@ -360,3 +360,43 @@ html, body {
     color: #777;
     border: 1px solid #ddd;
 }
+
+/* 컨テナの overflow に影響されない原寸プレビュー */
+.ai-image-card img {
+    cursor: zoom-in;
+}
+
+.ai-det-image-preview {
+    position: fixed;
+    z-index: 100000;
+    overflow: hidden;
+    pointer-events: none;
+    background: #111;
+    border-radius: 5px;
+    outline: 2px solid #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+}
+
+.ai-det-image-preview[hidden] {
+    display: none;
+}
+
+.ai-det-image-preview img {
+    position: absolute;
+    display: block;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+}
+
+.ai-det-image-preview-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6px 10px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+    font-size: 12px;
+    text-align: center;
+}
