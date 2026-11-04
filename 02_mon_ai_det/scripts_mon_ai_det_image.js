@@ -7,6 +7,7 @@ $(document).ready(function () {
         renderAiDetImageSequences(getFilteredAiDetSequences());
     });
 
+    initAiDetImagePreview();
     loadAiDetImages();
 });
 
@@ -28,6 +29,7 @@ async function loadAiDetImages() {
 
     if ($container.length === 0) return;
 
+    document.dispatchEvent(new Event('ai-det-preview-hide'));
     $container.html('<div class="image-loading">이미지 로딩 중...</div>');
 
     try {
@@ -59,6 +61,7 @@ function renderAiDetImageSequences(sequences) {
     });
 
     const $container = $('.inference-image-container');
+    document.dispatchEvent(new Event('ai-det-preview-hide'));
     $container.empty();
 
     if (sequences.length === 0) {
@@ -217,3 +220,93 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+
+/* 원본 배율(1:1) 미리보기. 화면보다 크면 썸네일 위 마우스 위치로 이동합니다. */
+function initAiDetImagePreview() {
+    const preview = document.createElement('div');
+    preview.className = 'ai-det-image-preview';
+    preview.hidden = true;
+    preview.setAttribute('aria-hidden', 'true');
+
+    const image = document.createElement('img');
+    image.alt = '';
+    const caption = document.createElement('div');
+    caption.className = 'ai-det-image-preview-caption';
+    preview.append(image, caption);
+    document.body.appendChild(preview);
+
+    let activeImage = null;
+    let pointerX = 0;
+    let pointerY = 0;
+
+    function hide() {
+        activeImage = null;
+        preview.hidden = true;
+        image.removeAttribute('src');
+    }
+
+    function update() {
+        if (!activeImage || !activeImage.naturalWidth || !activeImage.naturalHeight) return;
+
+        const naturalWidth = activeImage.naturalWidth;
+        const naturalHeight = activeImage.naturalHeight;
+        const width = Math.min(naturalWidth, Math.max(1, window.innerWidth - 32));
+        const height = Math.min(naturalHeight, Math.max(1, window.innerHeight - 64));
+        const rect = activeImage.getBoundingClientRect();
+
+        // object-fit: contain의 검은 여백을 제외한 실제 이미지 영역 기준
+        const scale = Math.min(rect.width / naturalWidth, rect.height / naturalHeight);
+        const shownWidth = naturalWidth * scale;
+        const shownHeight = naturalHeight * scale;
+        const x = Math.max(0, Math.min(1,
+            (pointerX - rect.left - (rect.width - shownWidth) / 2) / shownWidth));
+        const y = Math.max(0, Math.min(1,
+            (pointerY - rect.top - (rect.height - shownHeight) / 2) / shownHeight));
+
+        Object.assign(preview.style, {
+            width: width + 'px',
+            height: height + 'px',
+            left: Math.round((window.innerWidth - width) / 2) + 'px',
+            top: Math.round((window.innerHeight - height) / 2) + 'px'
+        });
+        Object.assign(image.style, {
+            width: naturalWidth + 'px',
+            height: naturalHeight + 'px',
+            left: -Math.round((naturalWidth - width) * x) + 'px',
+            top: -Math.round((naturalHeight - height) * y) + 'px'
+        });
+        caption.textContent = '원본 1:1 · ' + naturalWidth + ' × ' + naturalHeight
+            + (width < naturalWidth || height < naturalHeight ? ' · 마우스를 움직여 확인' : '');
+        preview.hidden = false;
+    }
+
+    $('.inference-image-container')
+        .on('mouseenter', '.ai-image-card img', function (event) {
+            activeImage = this;
+            pointerX = event.clientX;
+            pointerY = event.clientY;
+            image.src = this.currentSrc || this.src;
+            update();
+        })
+        .on('mousemove', '.ai-image-card img', function (event) {
+            if (activeImage !== this) return;
+            pointerX = event.clientX;
+            pointerY = event.clientY;
+            update();
+        })
+        .on('mouseleave', '.ai-image-card img', hide);
+
+    document.addEventListener('load', function (event) {
+        if (event.target === activeImage) update();
+    }, true);
+    document.addEventListener('error', function (event) {
+        if (event.target === activeImage || event.target === image) hide();
+    }, true);
+    document.addEventListener('scroll', hide, true);
+    document.addEventListener('ai-det-preview-hide', hide);
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') hide();
+    });
+    window.addEventListener('resize', hide);
+    window.addEventListener('blur', hide);
+}
