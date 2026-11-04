@@ -15,7 +15,7 @@ namespace log_parser
             InitializeComponent();
 
             var settings = new ParserSettings();
-            Logger.Initialize(settings.LogDirectory, settings.StatusUpdateLogDirectory);
+            Logger.Initialize(settings.LogDirectory, settings.StatusUpdateLogPath);
 
             var stock = new StockService(settings.ConnectionString);
             stock.EssentialStockLoaded += lines => UpdateStockList(listBox2, label4, "Q-Code 갯수", lines);

@@ -10,7 +10,7 @@ namespace log_parser
             "Allow User Variables=true;";
 
         public readonly string LogDirectory = @"D:\25_Project\02_C#\00_Parts_Log_Parser\EMS_Log\Logs";
-        public readonly string StatusUpdateLogDirectory = @"D:\25_Project\02_C#\00_Parts_Log_Parser\EMS_Log\Logs\Logs_Purchase_Status_Update";
+        public readonly string StatusUpdateLogPath = @"D:\25_Project\02_C#\00_Parts_Log_Parser\EMS_Log\Logs\Logs_Purchase_Status_Update";
         public readonly string StockFilePath =
             @"D:\25_Project\02_C#\00_Parts_Log_Parser\EMS_Log\parts_ems_stock_list\STOCK.csv";
         public readonly string PriceFilePath =

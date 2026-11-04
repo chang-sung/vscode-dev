@@ -23,7 +23,9 @@
 
 재고 서비스는 `EssentialStockLoaded`, `ParsedStockLoaded`, `MatchingStockLoaded` 이벤트로 결과 목록을 전달합니다. `Form1.UpdateStockList`가 `Invoke`로 UI 스레드에서 목록과 개수를 갱신하므로 서비스는 폼 컨트롤을 참조하지 않습니다.
 
-수동 Drop 중복 키는 `Req_Date`, `Site`, `EQP_Div`, `Q_Code`, `Parts_Div`, `P_N`, `Req_Qty`의 조합을 그대로 사용하며, 기존 `PurchaseStatus_yyyy-MM-dd.txt`의 `DropKey` 기록과 호환됩니다.
+구매 상태 로그 경로 설정은 `ParserSettings.StatusUpdateLogPath`입니다. 경로는 기존과 같이 폴더를 지정합니다. 새 로그는 `yyyy-MM-dd| Q_Code| Parts_Div| P_N| 요청자| 요청수량| 발주수량| 구매상태| 이메일` 형식이며 DropKey를 출력하지 않습니다. 기존 로그 내용은 변경하지 않습니다.
+
+수동 Drop 중복 키는 `Req_Date`, `Site`, `EQP_Div`, `Q_Code`, `Parts_Div`, `P_N`, `Req_Qty`의 조합을 그대로 사용합니다. 키는 로그 폴더 아래 `DropStatusKeys/yyyy-MM-dd.keys`에 별도로 저장합니다. 기존 로그의 DropKey도 읽어 중복 방지를 유지합니다. 재실행 시 중복 방지를 위해 이 관리 파일을 함께 보관합니다.
 
 ## Visual Studio에 적용
 

@@ -10,13 +10,13 @@ namespace log_parser
     {
         private static readonly object _sync = new object();
         private static string _logDir;
-        private static string _statusUpdateLogDir;
+        private static string _statusUpdateLogPath;
 
 
-        public static void Initialize(string logDir, string statusUpdateLogDir)
+        public static void Initialize(string logDir, string statusUpdateLogPath)
         {
             _logDir = logDir ?? throw new ArgumentNullException(nameof(logDir));
-            _statusUpdateLogDir = statusUpdateLogDir ?? throw new ArgumentNullException(nameof(statusUpdateLogDir));
+            _statusUpdateLogPath = statusUpdateLogPath ?? throw new ArgumentNullException(nameof(statusUpdateLogPath));
         }
 
         // ----------- 일반 로그 -----------
@@ -65,17 +65,17 @@ namespace log_parser
 
             try
             {
-                if (string.IsNullOrWhiteSpace(_statusUpdateLogDir))
+                if (string.IsNullOrWhiteSpace(_statusUpdateLogPath))
                     throw new InvalidOperationException("Logger.Initialize(...) 를 먼저 호출해야 합니다.");
 
-                Directory.CreateDirectory(_statusUpdateLogDir);
+                Directory.CreateDirectory(_statusUpdateLogPath);
 
                 string filePath = Path.Combine(
-                    _statusUpdateLogDir,
+                    _statusUpdateLogPath,
                     $"PurchaseStatus_{DateTime.Now:yyyy-MM-dd}.txt"
                 );
 
-                string line = $"{DateTime.Now:yyyy-MM-dd}, {message}{Environment.NewLine}";
+                string line = $"{DateTime.Now:yyyy-MM-dd}| {message}{Environment.NewLine}";
 
                 WithStatusUpdateLock(() => File.AppendAllText(filePath, line, Encoding.UTF8));
             }
@@ -110,39 +110,62 @@ namespace log_parser
             }
         }
 
-        // 중복 키를 로그 자체에 저장하므로 프로그램을 재시작해도 같은 7개 컬럼 조합은 누적되지 않는다.
-        // 기존 8개 항목 뒤에 Drop 전용 식별자만 추가한다.
+        // 중복 키는 별도 관리 파일에 저장하고 구매 상태 로그에는 표시하지 않는다.
+        // 기존 로그의 DropKey도 읽어 재실행 시 중복 방지를 유지한다.
         public static int AppendDropStatusUpdates(DateTime date, IDictionary<string, string> targets)
         {
             if (targets == null) throw new ArgumentNullException(nameof(targets));
             if (targets.Count == 0) return 0;
-            if (string.IsNullOrWhiteSpace(_statusUpdateLogDir))
+            if (string.IsNullOrWhiteSpace(_statusUpdateLogPath))
                 throw new InvalidOperationException("Logger.Initialize(...) 를 먼저 호출해야 합니다.");
 
             int written = 0;
             WithStatusUpdateLock(() =>
             {
-                Directory.CreateDirectory(_statusUpdateLogDir);
-                string path = Path.Combine(_statusUpdateLogDir, $"PurchaseStatus_{date:yyyy-MM-dd}.txt");
+                Directory.CreateDirectory(_statusUpdateLogPath);
+                string path = Path.Combine(_statusUpdateLogPath, $"PurchaseStatus_{date:yyyy-MM-dd}.txt");
+                string keyDirectory = Path.Combine(_statusUpdateLogPath, "DropStatusKeys");
+                Directory.CreateDirectory(keyDirectory);
+                string keyPath = Path.Combine(keyDirectory, $"{date:yyyy-MM-dd}.keys");
                 const string marker = "| DropKey=";
                 var existingKeys = new HashSet<string>(StringComparer.Ordinal);
+                if (File.Exists(keyPath))
+                {
+                    foreach (string key in File.ReadLines(keyPath, Encoding.UTF8))
+                    {
+                        if (!string.IsNullOrWhiteSpace(key))
+                            existingKeys.Add(key.Trim());
+                    }
+                }
 
+                var migratedKeys = new List<string>();
                 if (File.Exists(path))
                 {
                     foreach (string line in File.ReadLines(path, Encoding.UTF8))
                     {
                         int markerIndex = line.LastIndexOf(marker, StringComparison.Ordinal);
                         if (markerIndex >= 0)
-                            existingKeys.Add(line.Substring(markerIndex + marker.Length).Trim());
+                        {
+                            string key = line.Substring(markerIndex + marker.Length).Trim();
+                            if (existingKeys.Add(key))
+                                migratedKeys.Add(key);
+                        }
                     }
                 }
 
+                // 기존 로그에서 읽은 키도 별도 파일로 이전한다.
+                File.AppendAllLines(keyPath, migratedKeys, Encoding.UTF8);
+
                 using (var writer = new StreamWriter(path, true, Encoding.UTF8))
+                using (var keyWriter = new StreamWriter(keyPath, true, Encoding.UTF8))
                 {
                     foreach (var target in targets)
                     {
                         if (!existingKeys.Add(target.Key)) continue;
-                        writer.WriteLine($"{date:yyyy-MM-dd}, {target.Value}{marker}{target.Key}");
+                        writer.WriteLine($"{date:yyyy-MM-dd}| {target.Value}");
+                        writer.Flush();
+                        keyWriter.WriteLine(target.Key);
+                        keyWriter.Flush();
                         written++;
                     }
                 }
