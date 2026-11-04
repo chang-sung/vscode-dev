@@ -290,6 +290,10 @@ html, body {
     border: 3px solid #007bff;
 }
 
+.ai-image-card.detected .ai-image-info > div:last-child {
+    color: #007bff;
+}
+
 .ai-image-card:hover {
     border-color: #444;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
