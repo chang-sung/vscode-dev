@@ -643,6 +643,44 @@ body.mode-search .menu-container{
     width: 1660px;
 }
 
+/* 컬럼을 넓혀도 컨테이너 대신 DataTables 내부 가로 스크롤만 확장 */
+.parts-purchase-container .table-wrap {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.purchase-mgmt-table th[data-purchase-column] {
+    position: relative;
+    box-sizing: border-box;
+}
+
+.purchase-mgmt-table .purchase-column-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 7px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 10;
+}
+
+.purchase-mgmt-table .purchase-column-resizer:hover {
+    background: rgba(0, 123, 255, .35);
+}
+
+/* 스크롤 본문의 높이 계산용 숨은 헤더에는 핸들을 노출하지 않는다. */
+:is(.dataTables_scrollBody, .dt-scroll-body) .purchase-column-resizer {
+    display: none;
+}
+
+body.purchase-column-resizing,
+body.purchase-column-resizing * {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
 :root{
   /* 색상 변수 */
   --border: #ddd;
@@ -722,6 +760,16 @@ body.mode-search .menu-container{
 .parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(2){ position:sticky; left:var(--left2); z-index:8; }
 .parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(3){ position:sticky; left:var(--left3); z-index:8; }
 .parts-purchase-wrapper .purchase-mgmt-table thead th:nth-child(4){ position:sticky; left:var(--left4); z-index:8; }
+
+/* 2단 헤더의 EMS/라인 등을 앞쪽 고정 컬럼으로 잘못 취급하지 않는다. */
+.parts-purchase-wrapper .purchase-mgmt-table thead th[data-purchase-column] {
+  position: relative;
+  left: auto;
+}
+.parts-purchase-wrapper .purchase-mgmt-table thead th[data-purchase-column="0"] { position: sticky; left: var(--left1); }
+.parts-purchase-wrapper .purchase-mgmt-table thead th[data-purchase-column="1"] { position: sticky; left: var(--left2); }
+.parts-purchase-wrapper .purchase-mgmt-table thead th[data-purchase-column="2"] { position: sticky; left: var(--left3); }
+.parts-purchase-wrapper .purchase-mgmt-table thead th[data-purchase-column="3"] { position: sticky; left: var(--left4); }
 
 /* 바디 고정 + 페인트 안정화 */
 .parts-purchase-wrapper .purchase-mgmt-table tbody td:nth-child(1){ position:sticky; left:var(--left1); z-index:6; will-change:transform; transform:translateZ(0); }
