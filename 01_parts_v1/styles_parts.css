@@ -655,9 +655,6 @@ body.mode-search .menu-container{
     width: 100%;
     min-width: 0;
 }
-.parts-purchase-container .purchase-mgmt-table thead th{
-    position: relative;
-}
 .parts-purchase-container .purchase-mgmt-table thead th .purchase-col-resizer{
     position: absolute;
     top: 0;
