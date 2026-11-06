@@ -473,112 +473,6 @@ const PartsBuy = (() => {
         renderTable(state.items);
     }
 
-    // 컬럼 너비는 브라우저/권한 모드별로 보관한다.
-    let purchaseColumnDefs = [];
-    let purchaseResizeObserver = null;
-    const purchaseMinWidth = 36;
-    function purchaseStorageKey() {
-        return 'parts-purchase-widths-v1:' + (state.role || 'user') + ':' + (state.userName || 'anonymous');
-    }
-    function readPurchaseWidths() {
-        try { return JSON.parse(localStorage.getItem(purchaseStorageKey()) || '{}') || {}; }
-        catch (_) { return {}; }
-    }
-    function purchaseTableNodes() {
-        if (!state.container) return [];
-        return [...state.container.querySelectorAll('table.purchase-mgmt-table')];
-    }
-    function applyPurchaseWidths() {
-        if (!purchaseColumnDefs.length || !state.container) return;
-        const saved = readPurchaseWidths();
-        const widths = purchaseColumnDefs.map(c => {
-            const n = Number(saved[c.key]);
-            return Number.isFinite(n) && n >= purchaseMinWidth ? Math.round(n) : c.width;
-        });
-        const total = widths.reduce((a, b) => a + b, 0);
-        // 기준 너비는 컬럼 합계로 고정한다. 기존 테이블 폭을 다시 측정해
-        // 재적용하면 ResizeObserver와 순환하며 계속 확장될 수 있다.
-        const tableWidth = total;
-        purchaseTableNodes().forEach(table => {
-            table.style.width = tableWidth + 'px';
-            table.style.minWidth = total + 'px';
-            const cg = table.querySelector('colgroup');
-            if (cg) [...cg.children].forEach((col, i) => {
-                if (widths[i] != null) col.style.width = widths[i] + 'px';
-            });
-            // DataTables가 생성한 헤더/바디 양쪽에 동일한 폭을 적용한다.
-            table.querySelectorAll('thead tr.sub-head th').forEach(() => {});
-            let offset = 0;
-            widths.slice(0, 4).forEach((width, i) => {
-                table.style.setProperty('--left' + (i + 1), offset + 'px');
-                offset += width;
-            });
-        });
-        // 스크롤 헤더/바디 래퍼가 동일한 최소 폭을 갖도록 한다.
-        state.container.querySelectorAll('.dataTables_scrollHeadInner').forEach(el => {
-            el.style.width = tableWidth + 'px';
-        });
-    }
-    function wirePurchaseColumnResize() {
-        if (!state.container || !purchaseColumnDefs.length) return;
-        const header = state.container.querySelector('.dataTables_scrollHead thead') ||
-                       state.container.querySelector('.purchase-mgmt-table thead');
-        if (!header) return;
-        // 그룹 헤더의 colspan을 고려하여 각 실제 컬럼에 대응하는 헤더를 찾는다.
-        const top = [...header.querySelectorAll('tr.top-group th')];
-        const sub = [...header.querySelectorAll('tr.sub-head th')];
-        let index = 0, subIndex = 0;
-        top.forEach(th => {
-            const span = Number(th.getAttribute('colspan') || 1);
-            if (span > 1) {
-                for (let k = 0; k < span; k++) addHandle(sub[subIndex++], index++);
-            } else {
-                addHandle(th, index++);
-            }
-        });
-        function addHandle(th, colIndex) {
-            if (!th || !purchaseColumnDefs[colIndex] || th.querySelector('.purchase-col-resizer')) return;
-            const handle = document.createElement('span');
-            handle.className = 'purchase-col-resizer';
-            handle.title = '드래그하여 컬럼 너비 조절';
-            th.appendChild(handle);
-            handle.addEventListener('pointerdown', e => {
-                if (e.button !== 0) return;
-                e.preventDefault();
-                e.stopPropagation();
-                const def = purchaseColumnDefs[colIndex];
-                const startX = e.clientX;
-                const startWidth = Number(readPurchaseWidths()[def.key]) || def.width;
-                const onMove = ev => {
-                    const next = Math.max(purchaseMinWidth, Math.round(startWidth + ev.clientX - startX));
-                    const widths = readPurchaseWidths();
-                    widths[def.key] = next;
-                    try { localStorage.setItem(purchaseStorageKey(), JSON.stringify(widths)); } catch (_) {}
-                    applyPurchaseWidths();
-                };
-                const onEnd = () => {
-                    window.removeEventListener('pointermove', onMove);
-                    window.removeEventListener('pointerup', onEnd);
-                    document.body.classList.remove('purchase-column-resizing');
-                };
-                document.body.classList.add('purchase-column-resizing');
-                window.addEventListener('pointermove', onMove);
-                window.addEventListener('pointerup', onEnd, { once: true });
-            });
-        }
-    }
-    function setupPurchaseSizing() {
-        applyPurchaseWidths();
-        wirePurchaseColumnResize();
-        if (purchaseResizeObserver) purchaseResizeObserver.disconnect();
-        // 내부 table-wrap 대신 외부 컨테이너의 크기만 감시한다.
-        const host = state.container?.closest('.parts-purchase-container');
-        if (host && window.ResizeObserver) {
-            purchaseResizeObserver = new ResizeObserver(() => applyPurchaseWidths());
-            purchaseResizeObserver.observe(host);
-        }
-    }
-
     /* ---------------------------
         UI 스켈레톤
     --------------------------- */
@@ -627,7 +521,6 @@ const PartsBuy = (() => {
         ];
 
         const cols = privileged ? [...base, ...adminOnly] : base;
-        purchaseColumnDefs = cols;
 
         // ── 헤더 2단 구성 정보 만들기 ─────────────────────────
         const groups = {};   // {groupName: [colIndex,...]}
@@ -661,8 +554,7 @@ const PartsBuy = (() => {
         }
         }
 
-        const storedWidths = readPurchaseWidths();
-        const colgroupHTML = cols.map(c => `<col style="width:${Math.max(purchaseMinWidth, Number(storedWidths[c.key]) || c.width)}px">`).join('');
+        const colgroupHTML = cols.map(c => `<col style="width:${c.width}px">`).join('');
         const row1HTML = row1.map(cell => {
         if (cell.type === 'group') {
             return `<th class="th-group" colspan="${cell.span}">${cell.text}</th>`;
@@ -868,13 +760,11 @@ const PartsBuy = (() => {
         buyDT.columns.adjust();
         buyDT.fixedHeader?.adjust?.();
         buyDT.fixedColumns().relayout?.();
-        setupPurchaseSizing();
         } else {
             buyDT = $table.DataTable({
                 data: dtData,
                 columns: cols,
                 columnDefs: [...catgCellDef, ...poRejectCellDef],
-                autoWidth: false,
                 scrollY: '540px',
                 scrollX: true,
                 scrollCollapse: true,
@@ -904,8 +794,6 @@ const PartsBuy = (() => {
                     }
                 }
             });
-
-            setupPurchaseSizing();
 
             // 4) 행 선택 바인딩
             bindDTSelectable($table, {

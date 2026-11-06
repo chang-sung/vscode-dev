@@ -640,38 +640,7 @@ body.mode-search .menu-container{
 
 /* ----------------------------------------- 파츠 구매  페이지 ----------------------------------------- */
 .parts-purchase-container{
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-}
-.parts-purchase-container .table-wrap{
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: auto;
-}
-.parts-purchase-container .dataTables_wrapper,
-.parts-purchase-container .dataTables_scroll{
-    width: 100%;
-    min-width: 0;
-}
-.parts-purchase-container .purchase-mgmt-table thead th .purchase-col-resizer{
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 8px;
-    z-index: 20;
-    cursor: col-resize;
-    touch-action: none;
-}
-.parts-purchase-container .purchase-mgmt-table thead th .purchase-col-resizer:hover{
-    background: rgba(0, 100, 220, .18);
-}
-body.purchase-column-resizing,
-body.purchase-column-resizing *{
-    cursor: col-resize !important;
-    user-select: none !important;
+    width: 1660px;
 }
 
 :root{
@@ -1717,8 +1686,8 @@ th, td {
 /* 구매담당자 모드에서만 파츠 구매 컨테이너 전체폭 */
 body.role-purchaser .parts-purchase-container {
   width: 100% !important;
-  max-width: 100%;
-  min-width: 0;
+  max-width: 96.2vw;
+  overflow-x: auto;
 }
 
 /* PO Reject 셀을 아이콘 위한 앵커로 */
