@@ -19,6 +19,55 @@ const PartsBuy = (() => {
     let __buyDelBusy = false;
     let __purchaseSortable = null; //  DnD 인스턴스 보관
     let purchaseColumnWidths = null;
+    let purchaseViewportFrame = null;
+
+    // 상단 메뉴/버튼의 실제 위치를 제외한 브라우저의 남은 공간을 사용한다.
+    function fitPurchaseViewport() {
+        if (!state.isPurchaser || !buyDT || !state.container) return;
+        const purchaseWrapper = state.container.closest('.parts-purchase-wrapper');
+        if (!purchaseWrapper || !purchaseWrapper.getClientRects().length) return;
+        const viewport = document.documentElement;
+        const availableWidth = Math.max(1,
+            viewport.clientWidth - Math.max(0, purchaseWrapper.getBoundingClientRect().left));
+        const previousWidth = purchaseWrapper.style.getPropertyValue('--purchase-viewport-width');
+        const nextWidth = `${Math.floor(availableWidth)}px`;
+        if (previousWidth !== nextWidth) {
+            purchaseWrapper.style.setProperty('--purchase-viewport-width', nextWidth);
+            buyDT.columns.adjust();
+            applyPurchaseColumnWidths();
+        }
+        const scrollBody = buyDT.table().container().querySelector('.dataTables_scrollBody, .dt-scroll-body');
+        if (!scrollBody) return;
+        const height = Math.max(0, Math.floor(viewport.clientHeight - scrollBody.getBoundingClientRect().top));
+        scrollBody.style.height = `${height}px`;
+        scrollBody.style.maxHeight = `${height}px`;
+        buyDT.fixedHeader?.adjust?.();
+    }
+
+    function schedulePurchaseViewportFit() {
+        if (purchaseViewportFrame !== null) return;
+        purchaseViewportFrame = requestAnimationFrame(() => {
+            purchaseViewportFrame = null;
+            fitPurchaseViewport();
+        });
+    }
+
+    function enablePurchaseViewportFit() {
+        if (!state.isPurchaser) return;
+        window.addEventListener('resize', schedulePurchaseViewportFit);
+        $(buyDT.table().node()).on('draw.dt.purchaseViewport', schedulePurchaseViewportFit);
+        const purchaseWrapper = state.container.closest('.parts-purchase-wrapper');
+        if (window.ResizeObserver) {
+            const observer = new ResizeObserver(schedulePurchaseViewportFit);
+            observer.observe(purchaseWrapper);
+            const menu = document.querySelector('.menu-container');
+            if (menu) observer.observe(menu);
+        }
+        const observer = new MutationObserver(schedulePurchaseViewportFit);
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        observer.observe(purchaseWrapper, { attributes: true, attributeFilter: ['style'] });
+        schedulePurchaseViewportFit();
+    }
 
     // DataTables의 스크롤용 헤더/본문 복제 테이블에도 같은 너비를 적용한다.
     function applyPurchaseColumnWidths() {
@@ -852,7 +901,7 @@ const PartsBuy = (() => {
                 columnDefs: [...catgCellDef, ...poRejectCellDef],
                 scrollY: '540px',
                 scrollX: true,
-                scrollCollapse: true,
+                scrollCollapse: !state.isPurchaser,
                 paging: false,
                 searching: true,
                 fixedHeader: true,
@@ -882,6 +931,7 @@ const PartsBuy = (() => {
 
             // 4) 행 선택 바인딩
             enablePurchaseColumnResize();
+            enablePurchaseViewportFit();
             bindDTSelectable($table, {
                 selectedSet: selectedKeys,
                 getKey: (tr) => tr.getAttribute('data-key'),
@@ -1893,3 +1943,4 @@ const PartsBuy = (() => {
 })();
 
 window.PartsBuy = PartsBuy;
+

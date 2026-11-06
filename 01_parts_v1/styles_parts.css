@@ -1731,11 +1731,30 @@ th, td {
 }
 
 
-/* 구매담당자 모드에서만 파츠 구매 컨테이너 전체폭 */
+/* 구매담당자: 테이블 시작 위치부터 브라우저 오른쪽/하단까지 사용 */
+body.role-purchaser .parts-purchase-wrapper {
+  width: var(--purchase-viewport-width, 100%);
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 body.role-purchaser .parts-purchase-container {
   width: 100% !important;
-  max-width: 96.2vw;
-  overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+body.role-purchaser .parts-purchase-container .table-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+body.role-purchaser .parts-purchase-container :is(.dataTables_wrapper, .dt-container) {
+  width: 100%;
+  min-width: 0;
 }
 
 /* PO Reject 셀을 아이콘 위한 앵커로 */
@@ -1768,3 +1787,4 @@ td.po-reject-cell .po-reject-text {
   max-width: 100%;
   vertical-align: middle;
 }
+
