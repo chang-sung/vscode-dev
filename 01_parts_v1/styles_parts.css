@@ -675,10 +675,28 @@ body.mode-search .menu-container{
     display: none;
 }
 
-body.purchase-column-resizing,
-body.purchase-column-resizing * {
-    cursor: col-resize !important;
+body.purchase-column-resizing {
     user-select: none !important;
+}
+
+/* 헤더 재생성과 관계없이 경계 밖에서도 드래그를 이어가는 임시 레이어 */
+.purchase-resize-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+}
+
+.purchase-resize-guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #007bff;
+    pointer-events: none;
+    will-change: transform;
 }
 
 :root{
@@ -1787,4 +1805,5 @@ td.po-reject-cell .po-reject-text {
   max-width: 100%;
   vertical-align: middle;
 }
+
 

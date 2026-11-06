@@ -104,6 +104,8 @@ const PartsBuy = (() => {
     function enablePurchaseColumnResize() {
         const wrapper = buyDT.table().container();
         const table = buyDT.table().node();
+        let finishDrag = null;
+
         // Capture phase prevents DataTables sorting from consuming handle clicks.
         wrapper.addEventListener('click', event => {
             if (event.target.closest('.purchase-column-resizer')) {
@@ -113,41 +115,93 @@ const PartsBuy = (() => {
         }, true);
         wrapper.addEventListener('pointerdown', event => {
             const handle = event.target.closest('.purchase-column-resizer');
-            if (!handle || event.button !== 0) return;
+            if (!handle || event.button !== 0 || event.isPrimary === false) return;
             event.preventDefault();
             event.stopImmediatePropagation();
+            if (finishDrag) finishDrag(false);
+
+            const header = handle.closest('th[data-purchase-column]');
+            const index = Number(header.dataset.purchaseColumn);
             if (!purchaseColumnWidths) {
-                purchaseColumnWidths = buyDT.columns().indexes().toArray().map(index =>
-                    buyDT.column(index).header().getBoundingClientRect().width);
+                purchaseColumnWidths = buyDT.columns().indexes().toArray().map(column =>
+                    buyDT.column(column).header().getBoundingClientRect().width);
             }
-            const index = Number(handle.parentElement.dataset.purchaseColumn);
             const startX = event.clientX;
             const startWidth = purchaseColumnWidths[index];
             const pointerId = event.pointerId;
-            handle.setPointerCapture(pointerId);
+            const headerRect = header.getBoundingClientRect();
+            const overlay = document.createElement('div');
+            overlay.className = 'purchase-resize-overlay';
+            overlay.setAttribute('aria-hidden', 'true');
+            const guide = document.createElement('div');
+            guide.className = 'purchase-resize-guide';
+            guide.style.left = `${headerRect.right}px`;
+            overlay.appendChild(guide);
+            document.body.appendChild(overlay);
             document.body.classList.add('purchase-column-resizing');
+
+            // 드래그 중에는 안내선만 이동한다. 수천 행의 레이아웃 계산은 놓을 때 한 번만 수행한다.
+            let nextWidth = startWidth;
+            let frame = null;
+            const updatePosition = clientX => {
+                nextWidth = Math.max(40, Math.round(startWidth + clientX - startX));
+                if (frame !== null) return;
+                frame = requestAnimationFrame(() => {
+                    frame = null;
+                    guide.style.transform = `translateX(${nextWidth - startWidth}px)`;
+                });
+            };
+            const finish = commit => {
+                if (finishDrag !== finish) return;
+                finishDrag = null;
+                window.removeEventListener('pointermove', move, true);
+                window.removeEventListener('pointerup', up, true);
+                window.removeEventListener('pointercancel', cancel, true);
+                window.removeEventListener('blur', cancel);
+                document.removeEventListener('visibilitychange', visibility);
+                if (frame !== null) cancelAnimationFrame(frame);
+                overlay.remove();
+                document.body.classList.remove('purchase-column-resizing');
+                if (commit) {
+                    purchaseColumnWidths[index] = nextWidth;
+                    applyPurchaseColumnWidths();
+                    buyDT.fixedHeader?.adjust?.();
+                }
+            };
             const move = e => {
                 if (e.pointerId !== pointerId) return;
-                purchaseColumnWidths[index] = Math.max(40, Math.round(startWidth + e.clientX - startX));
-                applyPurchaseColumnWidths();
+                // 브라우저 밖에서 버튼을 놓은 뒤 돌아온 경우에도 드래그 상태를 해제한다.
+                if ((e.buttons & 1) === 0) {
+                    finish(true);
+                    return;
+                }
+                e.preventDefault();
+                updatePosition(e.clientX);
             };
-            const end = e => {
+            const up = e => {
                 if (e.pointerId !== pointerId) return;
-                handle.removeEventListener('pointermove', move);
-                handle.removeEventListener('pointerup', end);
-                handle.removeEventListener('pointercancel', end);
-                handle.removeEventListener('lostpointercapture', end);
-                document.body.classList.remove('purchase-column-resizing');
-                if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
-                applyPurchaseColumnWidths();
+                updatePosition(e.clientX);
+                finish(true);
             };
-            handle.addEventListener('pointermove', move);
-            handle.addEventListener('pointerup', end);
-            handle.addEventListener('pointercancel', end);
-            handle.addEventListener('lostpointercapture', end);
-            applyPurchaseColumnWidths();
+            const cancel = e => {
+                if (e?.pointerId != null && e.pointerId !== pointerId) return;
+                finish(false);
+            };
+            const visibility = () => {
+                if (document.hidden) cancel();
+            };
+            finishDrag = finish;
+            // 변형/복제될 수 있는 헤더가 아닌 window에서 드래그 전체를 추적한다.
+            window.addEventListener('pointermove', move, { capture: true, passive: false });
+            window.addEventListener('pointerup', up, true);
+            window.addEventListener('pointercancel', cancel, true);
+            window.addEventListener('blur', cancel);
+            document.addEventListener('visibilitychange', visibility);
         }, true);
         $(table).on('draw.dt.purchaseResize column-sizing.dt.purchaseResize', applyPurchaseColumnWidths);
+        $(table).on('destroy.dt.purchaseResize', () => {
+            if (finishDrag) finishDrag(false);
+        });
     }
 
     // ============================================ 행 드래그앤 드롭
@@ -1943,4 +1997,5 @@ const PartsBuy = (() => {
 })();
 
 window.PartsBuy = PartsBuy;
+
 
