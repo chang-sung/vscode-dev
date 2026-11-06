@@ -574,7 +574,9 @@ const PartsBuy = (() => {
             state.isPurchaser   = (state.role === '구매담당자'); // 구매담당자
             state.isManager     = (state.role === '관리자');     // 관리자
             state.isPrivileged  = state.isPurchaser || state.isManager; // 관리자/구매담당자
-           
+
+            // 테이블 생성 전에도 구매담당자 레이아웃 클래스를 먼저 확정한다.
+            document.body.classList.toggle('role-purchaser', state.isPurchaser);
             setAdminMode(state.isPrivileged);
 
             // 상단 버튼 표시 제어
@@ -608,8 +610,6 @@ const PartsBuy = (() => {
                 userNameContainer.appendChild(userNameBox);
                 document.body.prepend(userNameContainer);
             }
-            // 권한 클래스 토글 (구매담당자면 role-purchaser 클래스 on)
-            document.body.classList.toggle('role-purchaser', state.isPurchaser);
         } catch (e) {
             console.error('Authority check failed:', e);
         }
@@ -804,6 +804,9 @@ const PartsBuy = (() => {
         const $table = $(state.container).find('.purchase-mgmt-table').filter(function () {
             return !this.closest('.dataTables_scrollHead, .dataTables_scrollFoot, .dt-scroll-head, .dt-scroll-foot');
         });
+        // 최초 권한 확인은 buildUI보다 먼저 실행된다. 빈 선택자로 초기화하면
+        // 리사이즈 이벤트 연결에서 예외가 나서 권한별 UI 적용까지 중단된다.
+        if (!$table.length) return;
 
         // 1) 표에 쓸 데이터 매핑
         const dtData = (rowsData || []).map(it => {
@@ -1997,5 +2000,6 @@ const PartsBuy = (() => {
 })();
 
 window.PartsBuy = PartsBuy;
+
 
 
