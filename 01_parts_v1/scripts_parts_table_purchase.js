@@ -496,9 +496,9 @@ const PartsBuy = (() => {
             return Number.isFinite(n) && n >= purchaseMinWidth ? Math.round(n) : c.width;
         });
         const total = widths.reduce((a, b) => a + b, 0);
-        const host = state.container.querySelector('.table-wrap');
-        const available = host ? host.clientWidth : 0;
-        const tableWidth = Math.max(total, available);
+        // 기준 너비는 컬럼 합계로 고정한다. 기존 테이블 폭을 다시 측정해
+        // 재적용하면 ResizeObserver와 순환하며 계속 확장될 수 있다.
+        const tableWidth = total;
         purchaseTableNodes().forEach(table => {
             table.style.width = tableWidth + 'px';
             table.style.minWidth = total + 'px';
@@ -571,7 +571,8 @@ const PartsBuy = (() => {
         applyPurchaseWidths();
         wirePurchaseColumnResize();
         if (purchaseResizeObserver) purchaseResizeObserver.disconnect();
-        const host = state.container?.querySelector('.table-wrap');
+        // 내부 table-wrap 대신 외부 컨테이너의 크기만 감시한다.
+        const host = state.container?.closest('.parts-purchase-container');
         if (host && window.ResizeObserver) {
             purchaseResizeObserver = new ResizeObserver(() => applyPurchaseWidths());
             purchaseResizeObserver.observe(host);
