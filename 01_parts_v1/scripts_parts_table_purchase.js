@@ -18,6 +18,88 @@ const PartsBuy = (() => {
     let buyEditCtxs = null; // [{ rowNode, rowApi, before, beforeKey }, ...]
     let __buyDelBusy = false;
     let __purchaseSortable = null; //  DnD 인스턴스 보관
+    let purchaseColumnWidths = null;
+
+    // DataTables의 스크롤용 헤더/본문 복제 테이블에도 같은 너비를 적용한다.
+    function applyPurchaseColumnWidths() {
+        if (!purchaseColumnWidths || !buyDT) return;
+        const total = purchaseColumnWidths.reduce((sum, width) => sum + width, 0);
+        const wrapper = buyDT.table().container();
+        const tables = new Set(wrapper.querySelectorAll('table.purchase-mgmt-table'));
+        document.querySelectorAll('table.purchase-mgmt-table.fixedHeader-floating, table.purchase-mgmt-table.fixedHeader-locked')
+            .forEach(table => tables.add(table));
+        tables.forEach(table => {
+            table.style.width = `${total}px`;
+            table.style.minWidth = `${total}px`;
+            table.querySelectorAll('colgroup').forEach(group => {
+                Array.from(group.children).forEach((col, index) => {
+                    col.style.width = `${purchaseColumnWidths[index]}px`;
+                });
+            });
+            table.querySelectorAll('thead th[data-purchase-column]').forEach(th => {
+                const index = Number(th.dataset.purchaseColumn);
+                th.style.width = `${purchaseColumnWidths[index]}px`;
+                th.style.minWidth = `${purchaseColumnWidths[index]}px`;
+                th.style.maxWidth = `${purchaseColumnWidths[index]}px`;
+            });
+            let left = 0;
+            purchaseColumnWidths.slice(0, 4).forEach((width, index) => {
+                table.style.setProperty(`--left${index + 1}`, `${left}px`);
+                left += width;
+            });
+        });
+        wrapper.querySelectorAll('.dataTables_scrollHeadInner, .dt-scroll-headInner')
+            .forEach(inner => { inner.style.width = `${total}px`; });
+    }
+
+    function enablePurchaseColumnResize() {
+        const wrapper = buyDT.table().container();
+        const table = buyDT.table().node();
+        // Capture phase prevents DataTables sorting from consuming handle clicks.
+        wrapper.addEventListener('click', event => {
+            if (event.target.closest('.purchase-column-resizer')) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }, true);
+        wrapper.addEventListener('pointerdown', event => {
+            const handle = event.target.closest('.purchase-column-resizer');
+            if (!handle || event.button !== 0) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!purchaseColumnWidths) {
+                purchaseColumnWidths = buyDT.columns().indexes().toArray().map(index =>
+                    buyDT.column(index).header().getBoundingClientRect().width);
+            }
+            const index = Number(handle.parentElement.dataset.purchaseColumn);
+            const startX = event.clientX;
+            const startWidth = purchaseColumnWidths[index];
+            const pointerId = event.pointerId;
+            handle.setPointerCapture(pointerId);
+            document.body.classList.add('purchase-column-resizing');
+            const move = e => {
+                if (e.pointerId !== pointerId) return;
+                purchaseColumnWidths[index] = Math.max(40, Math.round(startWidth + e.clientX - startX));
+                applyPurchaseColumnWidths();
+            };
+            const end = e => {
+                if (e.pointerId !== pointerId) return;
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', end);
+                handle.removeEventListener('pointercancel', end);
+                handle.removeEventListener('lostpointercapture', end);
+                document.body.classList.remove('purchase-column-resizing');
+                if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+                applyPurchaseColumnWidths();
+            };
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', end);
+            handle.addEventListener('pointercancel', end);
+            handle.addEventListener('lostpointercapture', end);
+            applyPurchaseColumnWidths();
+        }, true);
+        $(table).on('draw.dt.purchaseResize column-sizing.dt.purchaseResize', applyPurchaseColumnWidths);
+    }
 
     // ============================================ 행 드래그앤 드롭
     function getDT() { return buyDT; }
@@ -544,12 +626,12 @@ const PartsBuy = (() => {
             row1.push({ type: 'group', text: col.group, span: g.length });
             g.forEach(idx => {
                 const cc = cols[idx];
-                row2.push({ text: cc.title, admin: !!cc.adminOnly });
+                row2.push({ text: cc.title, admin: !!cc.adminOnly, index: idx });
             });
             }
             i++;
         } else {
-            row1.push({ type: 'single', text: col.title, admin: !!col.adminOnly });
+            row1.push({ type: 'single', text: col.title, admin: !!col.adminOnly, index: i });
             i++;
         }
         }
@@ -559,9 +641,9 @@ const PartsBuy = (() => {
         if (cell.type === 'group') {
             return `<th class="th-group" colspan="${cell.span}">${cell.text}</th>`;
         }
-        return `<th class="${cell.admin ? 'admin-col' : ''}" rowspan="2">${cell.text}</th>`;
+        return `<th class="${cell.admin ? 'admin-col' : ''}" data-purchase-column="${cell.index}" rowspan="2">${cell.text}<span class="purchase-column-resizer" title="드래그하여 컬럼 너비 조절"></span></th>`;
         }).join('');
-        const row2HTML = row2.map(cell => `<th class="${cell.admin ? 'admin-col' : ''}">${cell.text}</th>`).join('');
+        const row2HTML = row2.map(cell => `<th class="${cell.admin ? 'admin-col' : ''}" data-purchase-column="${cell.index}">${cell.text}<span class="purchase-column-resizer" title="드래그하여 컬럼 너비 조절"></span></th>`).join('');
 
         container.innerHTML = `
         <div class="table-wrap">
@@ -616,7 +698,9 @@ const PartsBuy = (() => {
         DataTables 초기화/갱신
     --------------------------- */
     function finalizeBuyTable(rowsData) {
-        const $table = $(state.container).find('.purchase-mgmt-table');
+        const $table = $(state.container).find('.purchase-mgmt-table').filter(function () {
+            return !this.closest('.dataTables_scrollHead, .dataTables_scrollFoot, .dt-scroll-head, .dt-scroll-foot');
+        });
 
         // 1) 표에 쓸 데이터 매핑
         const dtData = (rowsData || []).map(it => {
@@ -760,6 +844,7 @@ const PartsBuy = (() => {
         buyDT.columns.adjust();
         buyDT.fixedHeader?.adjust?.();
         buyDT.fixedColumns().relayout?.();
+        applyPurchaseColumnWidths();
         } else {
             buyDT = $table.DataTable({
                 data: dtData,
@@ -796,6 +881,7 @@ const PartsBuy = (() => {
             });
 
             // 4) 행 선택 바인딩
+            enablePurchaseColumnResize();
             bindDTSelectable($table, {
                 selectedSet: selectedKeys,
                 getKey: (tr) => tr.getAttribute('data-key'),
