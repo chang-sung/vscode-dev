@@ -73,7 +73,7 @@ namespace MotionKit {
       OnMsgEvent($"Bit Off success");
 
     }
-    bool Update() {
+    public bool Update() {
       uint indata = 0, outdata = 0;
       Status ms
         = NMC.MC_IO_READ_DWORD(Global.BOARD_ID, Global.ECAT_ADDR, 1, 4, ref indata);
@@ -104,8 +104,8 @@ namespace MotionKit {
           if (Update() == false) break;
           Thread.Sleep(100);
         }
-      } 
-      catch (Exception) { } 
+      }
+      catch (Exception) { }
       finally {
         OnMsgEvent("IO Update Loop 종료");
         bRunThread = false;
@@ -113,7 +113,7 @@ namespace MotionKit {
     }
 
     public void Start() { //run method 스레드 시작
-      if(bRunThread == true) {
+      if (bRunThread == true) {
         OnMsgEvent("IO Update Loop가 이미 실행 중입니다.");
         return;
       }

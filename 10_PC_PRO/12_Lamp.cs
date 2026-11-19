@@ -5,27 +5,31 @@ using System.Text;
 using System.Threading.Tasks;
 using Helper;
 
-namespace MotionKit
-{
-    public class Lamp
-    {
-        readonly IO io;
-        readonly IOMapY bit;
+namespace MotionKit {
+  public class Lamp {
+    readonly IO io;
+    readonly IOMapY bit;
 
-        public Lamp(IOMapY bit)
-        {
-            this.bit = bit;
-            io = IO.GetInstance();
-        }
-
-        public void On()
-        {
-            io.On((int)bit);
-        }
-
-        public void Off()
-        {
-            io.Off((int)bit);
-        }
+    public Lamp(IOMapY bit) {
+      this.bit = bit;
+      io = IO.GetInstance();
     }
+
+    public void On() {
+      io.On((int)bit);
+    }
+
+    public void Off() {
+      io.Off((int)bit);
+    }
+
+    public bool IsOn() {
+      return io.Y[(int)bit];
+    }
+
+    public bool IsOff() {
+      return io.Y[(int)bit];
+    }
+
+  }
 }
