@@ -1,631 +1,506 @@
-using Helper;
-using NMCMotionSDK;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Runtime.InteropServices;
-using System.Text;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using Helper;
+using OpenCvSharp;
+using OpenCvSharp.Extensions;
+using CvRect = OpenCvSharp.Rect;
 
 namespace MotionKit {
-  using NMC = NMCSDKLib;
-  using Status = NMCSDKLib.MC_STATUS;
+  public partial class frmVision : Form {
+    // Day6 Form34: Mat, Rectangle, drawing을 이용한 ROI 처리
+    private VideoCapture capture;
+    private CancellationTokenSource liveCts;
+    private Task liveTask;
+    private readonly object frameLock = new object();
+    private Mat src;                    // 카메라 원본 프레임 (OpenCV Mat)
+    private Rectangle rect;             // 원본 이미지 기준 ROI
+    private bool drawing = false;
+    private bool hasRoi = false;
+    private System.Drawing.Point startPoint;
+    private int imageWidth, imageHeight;
+    private bool closingAfterStop = false;
 
-  public class Machine {
-    //명사: x축, y축, 픽업실린더, 배큠, 테이블
-    public Machine() {
+    public frmVision() {
+      InitializeComponent();
+      pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+      pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
 
-      io = IO.GetInstance();
+      // 버튼 Click 이벤트는 디자이너에서 연결한 경우 다시 연결하지 않습니다.
+      // btnRoiSave는 기존 frmVision.Designer.cs에서 Click 이벤트 연결 유지.
 
-      XAxis = new Servo(Global.X_AXIS_NAME, Global.X_AXIS_NUM);
-      YAxis = new Servo(Global.Y_AXIS_NAME, Global.Y_AXIS_NUM);
-      Teach = new TeachData("MainTeach");
-      // 공급실린더: 복솔
-      LoadCyl = new Cylinder(IOMapY.LoadCylFwd, IOMapY.LoadCylBwd, IOMapX.LoadCylFwd, IOMapX.LoadCylBwd);
-      // 편솔실린더:
-      PickCyl = new Cylinder(IOMapY.PickCylDn, IOMapX.PickCylDn, IOMapX.PickCylUp);
-      WorkCyl = new Cylinder(IOMapY.WorkCylDn , IOMapX.WorkCylDn, IOMapX.WorkCylUp);
-      MoveCyl = new Cylinder(IOMapY.MoveCylFwd, IOMapX.MoveCylFwd, IOMapX.MoveCylBwd);
-      UnldCyl = new Cylinder(IOMapY.UnldCyleFwd, IOMapX.UnldCyleFwd, IOMapX.UnldCyleBwd);
-      PickVac = new Vacuum(IOMapY.VacOn, IOMapY.VacOff, IOMapX.PickVacSen2);
+      btnLiveStop.Click += btnLiveStop_Click;
+      pictureBox1.MouseDown += pictureBox1_MouseDown;
+      pictureBox1.MouseMove += pictureBox1_MouseMove;
+      pictureBox1.MouseUp += pictureBox1_MouseUp;
+      pictureBox1.Paint += pictureBox1_Paint;
+      FormClosing += frmVision_FormClosing;
 
-      // Lamp
-      LampRed = new Lamp(IOMapY.LampRed);
-      LampYellow = new Lamp(IOMapY.LampYellow);
-      LampGreen = new Lamp(IOMapY.LampGreen);
+      cbxColor.DropDownStyle = ComboBoxStyle.DropDownList;
+      cbxLowUpper.DropDownStyle = ComboBoxStyle.DropDownList;
 
-      // Motor 
-      Drill = new Actuator(IOMapY.Drill);
-      Convy = new Actuator(IOMapY.Conveyor);
+      cbxColor.DataSource = Enum.GetValues(typeof(ColorChannel));
+      cbxLowUpper.DataSource = Enum.GetValues(typeof(ColorLevel));
 
-      drillTimer = new Stopwatch();
-      convTimer = new Stopwatch();
-   
-      cmd = EqpCmd.None;
-      workStep = inspStep = AutoStep.Ready;
-      drillTimer = new Stopwatch();
-      convTimer = new Stopwatch();
-      bWorkExist = bInspExist = false;
+      InitRoiListView();
+      LoadRoiConfig();
+      LoadColorConfig();       // Color_Config.txt에서 값 불러오기
+      UpdateColorListView();   // 불러온 값을 리스트에 표시
 
+      btnSave.Click += btnSave_Click;
+      btnSearch.Click += btnSearch_Click;
     }
 
-    public Servo XAxis { get; }
-    public Servo YAxis { get; }
-    public TeachData Teach { get; }
-    public IActuator PickCyl { get; }
-    public IActuator PickVac { get; }
-    public IActuator LoadCyl { get; }
-    public IActuator WorkCyl {  get; }
-    public IActuator MoveCyl { get; }
-    public IActuator UnldCyl { get; }
-    public IActuator Drill { get; }
-    public IActuator Convy { get; }
-
-    public Lamp LampRed { get; }
-    public Lamp LampYellow { get; }
-    public Lamp LampGreen { get; }
-
-    public event Action<string> OnMsgEvent;
-
-    IO io;
-
-
-    Thread runThread;
-    bool bRunThread = false;
-    Inspector inspector;
-    AutoStep workStep, inspStep;
-    EqpCmd cmd;
-    private EqpStatus currentStatus = EqpStatus.Stop;
-
-
-    Stopwatch drillTimer, convTimer;
-    bool bWorkExist, bInspExist;
-    
-    public event Action<EqpStatus> EqpStatusChanged;
-    public Func<bool> SearchColor { get; set; }
-
-    public EqpStatus eqpStatus
-    {
-        get { return currentStatus; }
+    private void InitRoiListView() {
+      livRoiParam.View = View.Details;
+      livRoiParam.GridLines = true;
+      livRoiParam.FullRowSelect = true;
+      livRoiParam.Items.Clear();
+      string[] names = { "StartY", "EndY", "StartX", "EndX" };
+      foreach (string name in names) {
+        ListViewItem item = new ListViewItem(name);
+        item.SubItems.Add("0");
+        livRoiParam.Items.Add(item);
+      }
     }
 
-    private EqpStatus status
+    private void btnLive_Click(object sender, EventArgs e) {
+      if (liveTask != null) return;
+      btnLive.Enabled = false;
+      try {
+        capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+        if (!capture.IsOpened()) {
+          MessageBox.Show("카메라 연결 실패");
+          capture.Dispose();
+          capture = null;
+          return;
+        }
+        capture.Set(VideoCaptureProperties.FrameWidth, 1600);
+        capture.Set(VideoCaptureProperties.FrameHeight, 1200);
+        liveCts = new CancellationTokenSource();
+        CancellationToken token = liveCts.Token;
+        liveTask = Task.Run(() => CameraLoop(token));
+      }
+      catch (Exception ex) {
+        MessageBox.Show(ex.Message);
+        capture?.Dispose();
+        capture = null;
+      }
+      finally { btnLive.Enabled = true; }
+    }
+
+    // 수업에서 사용한 Mat / ToBitmap()으로 프레임 처리
+    private void CameraLoop(CancellationToken token) {
+      using (Mat frame = new Mat()) {
+        try {
+          while (!token.IsCancellationRequested) {
+            if (!capture.Read(frame) || frame.Empty()) {
+              Thread.Sleep(30);
+              continue;
+            }
+            // ROI Save는 src.Clone()으로 현재 프레임을 안전하게 복사
+            lock (frameLock) {
+              Mat old = src;
+              src = frame.Clone();
+              old?.Dispose();
+            }
+            Bitmap bitmap = frame.ToBitmap();
+            try {
+              // BeginInvoke 작업이 누적되지 않도록 UI 처리 완료를 기다림
+              IAsyncResult result = pictureBox1.BeginInvoke(new Action(() =>
+              {
+                if (token.IsCancellationRequested || pictureBox1.IsDisposed) {
+                  bitmap.Dispose();
+                  return;
+                }
+                imageWidth = bitmap.Width;
+                imageHeight = bitmap.Height;
+                Image oldImage = pictureBox1.Image;
+                pictureBox1.Image = bitmap;
+                oldImage?.Dispose();
+                pictureBox1.Invalidate();
+              }));
+              // 작업 취소 시에도 위 콜백이 Bitmap을 정리함
+              while (!result.IsCompleted && !token.IsCancellationRequested)
+                Thread.Sleep(5);
+            }
+            catch (InvalidOperationException) {
+              bitmap.Dispose();
+              break;
+            }
+            Thread.Sleep(33);
+          }
+        }
+        catch (Exception ex) {
+          System.Diagnostics.Debug.WriteLine(ex.Message);
+        }
+      }
+    }
+
+    private async void btnLiveStop_Click(object sender, EventArgs e) {
+      await StopCameraAsync();
+    }
+
+    private async Task StopCameraAsync() {
+      if (liveCts == null) return;
+      btnLive.Enabled = false;
+      btnLiveStop.Enabled = false;
+      liveCts.Cancel();
+      if (liveTask != null) await liveTask;
+      capture?.Release();
+      capture?.Dispose();
+      capture = null;
+      liveCts.Dispose();
+      liveCts = null;
+      liveTask = null;
+      lock (frameLock) {
+        src?.Dispose();
+        src = null;
+      }
+      Image old = pictureBox1.Image;
+      pictureBox1.Image = null;
+      old?.Dispose();
+      btnLive.Enabled = true;
+      btnLiveStop.Enabled = true;
+    }
+
+    // PictureBox Zoom이 만든 여백을 고려하여 영상 영역 계산
+    private RectangleF GetImageRect() {
+      if (imageWidth <= 0 || imageHeight <= 0) return RectangleF.Empty;
+      float scale = Math.Min((float)pictureBox1.ClientSize.Width / imageWidth,
+                             (float)pictureBox1.ClientSize.Height / imageHeight);
+      float w = imageWidth * scale;
+      float h = imageHeight * scale;
+      return new RectangleF((pictureBox1.ClientSize.Width - w) / 2f,
+                            (pictureBox1.ClientSize.Height - h) / 2f, w, h);
+    }
+
+    private System.Drawing.Point ToImagePoint(System.Drawing.Point p) {
+      RectangleF r = GetImageRect();
+      if (r.IsEmpty) return System.Drawing.Point.Empty;
+      int x = (int)Math.Round((p.X - r.X) * imageWidth / r.Width);
+      int y = (int)Math.Round((p.Y - r.Y) * imageHeight / r.Height);
+      return new System.Drawing.Point(Math.Max(0, Math.Min(imageWidth, x)),
+                                      Math.Max(0, Math.Min(imageHeight, y)));
+    }
+
+    private PointF ToScreenPoint(System.Drawing.Point p) {
+      RectangleF r = GetImageRect();
+      return new PointF(r.X + p.X * r.Width / imageWidth,
+                        r.Y + p.Y * r.Height / imageHeight);
+    }
+
+    // Day6 Form34: MouseDown / MouseMove / MouseUp / Paint
+    private void pictureBox1_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button != MouseButtons.Left || pictureBox1.Image == null) return;
+      if (!GetImageRect().Contains(e.Location)) return;
+      startPoint = ToImagePoint(e.Location);
+      rect = new Rectangle(startPoint.X, startPoint.Y, 0, 0);
+      drawing = true;
+      hasRoi = false;
+      pictureBox1.Capture = true;
+    }
+
+    private void pictureBox1_MouseMove(object sender, MouseEventArgs e) {
+      if (!drawing) return;
+      System.Drawing.Point p = ToImagePoint(e.Location);
+      rect = Rectangle.FromLTRB(Math.Min(startPoint.X, p.X),
+                                Math.Min(startPoint.Y, p.Y),
+                                Math.Max(startPoint.X, p.X),
+                                Math.Max(startPoint.Y, p.Y));
+      pictureBox1.Invalidate();
+    }
+
+    private void pictureBox1_MouseUp(object sender, MouseEventArgs e) {
+      if (!drawing) return;
+      pictureBox1_MouseMove(sender, e);
+      drawing = false;
+      pictureBox1.Capture = false;
+      hasRoi = rect.Width > 0 && rect.Height > 0;
+      if (hasRoi) UpdateRoiListView();
+      pictureBox1.Invalidate();
+    }
+
+    private void pictureBox1_Paint(object sender, PaintEventArgs e) {
+      if ((!drawing && !hasRoi) || imageWidth <= 0 || imageHeight <= 0) return;
+      PointF p1 = ToScreenPoint(rect.Location);
+      PointF p2 = ToScreenPoint(new System.Drawing.Point(rect.Right, rect.Bottom));
+      RectangleF drawRect = RectangleF.FromLTRB(p1.X, p1.Y, p2.X, p2.Y);
+      using (Pen pen = new Pen(Color.Red, 2))
+        e.Graphics.DrawRectangle(pen, drawRect.X, drawRect.Y,
+                                 drawRect.Width, drawRect.Height);
+    }
+
+    private void UpdateRoiListView() {
+      livRoiParam.Items[0].SubItems[1].Text = rect.Top.ToString();
+      livRoiParam.Items[1].SubItems[1].Text = rect.Bottom.ToString();
+      livRoiParam.Items[2].SubItems[1].Text = rect.Left.ToString();
+      livRoiParam.Items[3].SubItems[1].Text = rect.Right.ToString();
+    }
+
+    // Day6 Form34: Mat의 [top, bottom, left, right] ROI 인덱서 사용
+    private void btnRoiSave_Click(object sender, EventArgs e) {
+      if (!hasRoi || rect.Width < 1 || rect.Height < 1) {
+        MessageBox.Show("ROI 영역을 먼저 설정하세요.");
+        return;
+      }
+      Mat snapshot;
+      lock (frameLock)
+        snapshot = src?.Clone();
+      if (snapshot == null || snapshot.Empty()) {
+        snapshot?.Dispose();
+        MessageBox.Show("카메라 영상이 없습니다.");
+        return;
+      }
+      using (snapshot) {
+        try {
+          Rectangle imageRect = new Rectangle(0, 0, snapshot.Width, snapshot.Height);
+          Rectangle cropRect = Rectangle.Intersect(rect, imageRect);
+          if (cropRect.Width <= 0 || cropRect.Height <= 0) {
+            MessageBox.Show("ROI 영역이 올바르지 않습니다.");
+            return;
+          }
+          using (Mat roi = snapshot[cropRect.Top, cropRect.Bottom,
+                                    cropRect.Left, cropRect.Right]) {
+            // 수업 예제의 ToBitmap()을 이용해 PictureBox에 표시
+            Image oldImage = pictureBox2.Image;
+            pictureBox2.Image = roi.ToBitmap();
+            oldImage?.Dispose();
+          }
+          string folder = Path.GetFullPath(Global.ParamPath);
+          Directory.CreateDirectory(folder);
+          string path = Path.Combine(folder, Global.ROI_Config_NAME + ".txt");
+          string[] lines = {
+                        "StartY=" + rect.Top,
+                        "EndY=" + rect.Bottom,
+                        "StartX=" + rect.Left,
+                        "EndX=" + rect.Right
+                    };
+          File.WriteAllLines(path, lines);
+          MessageBox.Show("ROI 저장 및 이미지 크롭 완료");
+        }
+        catch (Exception ex) {
+          MessageBox.Show("ROI 저장 실패 : " + ex.Message);
+        }
+      }
+    }
+
+    private void LoadRoiConfig() {
+      string path = Path.GetFullPath(Path.Combine(Global.ParamPath,
+                                                 Global.ROI_Config_NAME + ".txt"));
+      if (!File.Exists(path)) return;
+      try {
+        int startY = 0, endY = 0, startX = 0, endX = 0;
+        foreach (string line in File.ReadAllLines(path)) {
+          string[] values = line.Split('=');
+          if (values.Length != 2) continue;
+          int value;
+          if (!int.TryParse(values[1].Trim(), out value)) continue;
+          switch (values[0].Trim()) {
+            case "StartY": startY = value; break;
+            case "EndY": endY = value; break;
+            case "StartX": startX = value; break;
+            case "EndX": endX = value; break;
+          }
+        }
+        rect = Rectangle.FromLTRB(startX, startY, endX, endY);
+        hasRoi = rect.Width > 0 && rect.Height > 0;
+        if (hasRoi) {
+          UpdateRoiListView();
+          pictureBox1.Invalidate();
+        }
+      }
+      catch (Exception ex) {
+        MessageBox.Show("ROI 불러오기 실패 : " + ex.Message);
+      }
+    }
+
+    private string ColorConfigPath
     {
-        get { return currentStatus; }
-        set
+        get
         {
-            if (currentStatus == value)
+            return Path.GetFullPath(
+                Path.Combine(Global.ParamPath, Global.Color_Config_NAME + ".txt"));
+        }
+    }
+
+    private readonly string[] colorParamNames =
+    {
+        "BlueLowLevel",
+        "BlueUpperLevel",
+        "GreenLowLevel",
+        "GreenUpperLevel",
+        "RedLowLevel",
+        "RedUpperLevel"
+    };
+
+    private readonly int[] colorParamValues = { 0, 255, 0, 255, 0, 255 };
+
+
+    private void UpdateColorListView()
+    {
+        livColorParam.Items.Clear();
+
+        for (int i = 0; i < colorParamNames.Length; i++)
+        {
+            var item = new ListViewItem(colorParamNames[i]);
+            item.SubItems.Add(colorParamValues[i].ToString());
+            livColorParam.Items.Add(item);
+        }
+    }
+
+    private void LoadColorConfig()
+    {
+        try
+        {
+            if (!File.Exists(ColorConfigPath))
                 return;
 
-            currentStatus = value;
-            LampUpdate(value);
-            EqpStatusChanged?.Invoke(value);
-        }
-    }
-
-
-
-    void Run() {
-      try {
-        while (bRunThread) {
-          io.Update();
-          EQPRun();                    //14
-          Thread.Sleep(100);
-        }
-      }
-      catch (Exception e) {
-        Console.WriteLine("Exception : " + e.Message);
-      }
-      finally {
-        bRunThread = false;
-      }
-    }
-
-
-        //IO Update하는 thread
-    public bool Create()
-    {
-        if (bRunThread)
-            return true;
-
-        bRunThread = true;
-
-        runThread = new Thread(Run);
-        runThread.IsBackground = true;
-        runThread.Start();
-
-        return true;
-    }
-
-
-    //시퀀스제어 이벤트핸들러
-    //Thread 돌릴 부분으로 EqpStatus/EqpCmd의 설비상태 관리
-    void EQPRun() {
-      switch (cmd) {
-        case EqpCmd.None: break;
-        case EqpCmd.Init:
-          //뭔가 실제 이닛 동작을 하는 메서드를 호출해주고
-          //그게 성공하면 status를 Ready로 바꿔주고
-          //cmd는 이제 None으로 바꿔주면 됩니다.
-          //=======> Init은 그냥 CmdInit() 에서 동작 시켜줄게요.
-          //여기선 status/cmd만 재정의 해주겠습니다.
-          status = EqpStatus.Ready;
-          cmd = EqpCmd.None;
-          break;
-        case EqpCmd.EStop:
-          status = EqpStatus.Error;
-          cmd = EqpCmd.None;
-          break;
-        case EqpCmd.OneCycleStart:
-        case EqpCmd.ContiCycleStop:
-        case EqpCmd.CycleStop:
-          WorkSEQ();
-          InspSeq();
-          break;
-      }
-    }
-
-    public bool CmdInit() {
-      if (eqpStatus == EqpStatus.Ready) {
-        return false;
-      }
-
-      if (eqpStatus == EqpStatus.Run) {
-        return false;
-      }
-
-      if (eqpStatus == EqpStatus.Idle) {
-        return false;
-      }
-
-      LoadCyl.Off();
-      WorkCyl.Off();
-      MoveCyl.Off();
-      UnldCyl.Off();
-
-      Drill.Off();
-      Convy.Off();
-
-      workStep = inspStep = AutoStep.Ready;
-      bWorkExist = bInspExist = false;
-
-      cmd = EqpCmd.Init;
-      return true;
-    }
-
-    public bool CmdEStop() {
-      Drill.Off();
-      Convy.Off();
-      cmd = EqpCmd.EStop;
-      return true;
-    }
-
-    public bool CmdOneCycleStart() {
-      if (status != EqpStatus.Ready)          //Ready 상태에서만 One Cycle 가능
-      {
-        return false;
-      }
-
-      workStep = inspStep = AutoStep.step00;      //시퀀스 초기화
-      cmd = EqpCmd.OneCycleStart;
-      return true;
-    }
-
-    public bool CmdContCycleStart() {
-      if (status != EqpStatus.Ready)      //Ready 상태에서만 Conti Cycle 가능
-      {
-        return false;
-      }
-
-      workStep = inspStep = AutoStep.step00;
-      cmd = EqpCmd.ContiCycleStop;
-      return true;
-    }
-
-    public bool CmdCycleStop()           //Idle 또는 Run 중에만 CycleStop 가능
-    {
-      if (!(status == EqpStatus.Idle || status == EqpStatus.Run)) {
-        return false;
-      }
-
-      cmd = EqpCmd.CycleStop;
-      return true;
-    }
-
-
-
-
-    /* 참고사항 : 관리중인 인덱스들
-     * workStep/inspStep
-     * bWorkExist/bInspExist
-     * AutoStep.Ready / ... / Complete
-     * EqpCmd cmd
-     * EpqStatus status
-     * more... 새로 만들어도 됨.
-     */
-
-    Stopwatch sw;
-    void WorkSEQ()   //Loading 단계 sequence : 완성도 85%
-    {
-      switch (workStep) {
-        case AutoStep.Ready://대기
-          workStep = AutoStep.step00;
-          break;
-        case AutoStep.step00://로드실 전진, status run
-          if (io.X[(int)IOMapX.MagazineSen] == false)         //io.X[12], 매거진 검출 센서
-          {
-            status = EqpStatus.Idle;
-            workStep = AutoStep.Ready;
-          }
-          else {
-            status = EqpStatus.Run;
-            LoadCyl.On();
-            LoadCyl.IsOn();
-            workStep = AutoStep.step10;
-            Thread.Sleep(500);
-          }
-          break;
-        case AutoStep.step10://로드실 후진, bWorkExist true					
-          LoadCyl.Off();
-          bWorkExist = true;
-          workStep = AutoStep.step20;
-          Thread.Sleep(500);
-          break;
-        case AutoStep.step20://워크실 하강
-          WorkCyl.On();
-          workStep = AutoStep.step30;
-          Thread.Sleep(500);
-          break;
-        case AutoStep.step30://드릴온 (stopwatch 시작)					
-          sw = new Stopwatch();
-          sw.Start();
-          Drill.On();
-          workStep = AutoStep.step40;
-          break;
-        case AutoStep.step40://가공시간 확인하여 드릴오프, 워크실 상승					
-          if (sw.ElapsedMilliseconds > 1000) {
-            sw.Stop();
-            Drill.Off();
-            WorkCyl.Off();
-            workStep = AutoStep.step50;
-          }
-          break;
-        case AutoStep.step50://bTestExist확인하여 무브실 전진
-          MoveCyl.On();
-          workStep = AutoStep.step60;
-          Thread.Sleep(1000);
-          break;
-        case AutoStep.step60://무브실 후진, bWorkExist false, bInspExist true					
-          MoveCyl.Off();
-          bWorkExist = false;          //work 시퀀스 false = off
-          bInspExist = true;          //Inspection 시퀀스 true
-          workStep = AutoStep.step70;
-          break;
-        case AutoStep.step70: //컴플릿
-                              //Conv.On();
-          workStep = AutoStep.Complete;
-          break;
-        case AutoStep.Complete: //cmd확인하여 step을 Ready/step00 분기
-                                //if (cmd == EqpCmd.ContiCycleStop)
-                                //{
-                                //	workStep = AutoStep.Ready;
-                                //}
-                                //else
-                                //{
-                                //	workStep = AutoStep.Ready;
-
-          //}
-
-          if (cmd == EqpCmd.CycleStop || cmd == EqpCmd.OneCycleStart)
-            workStep = AutoStep.Ready;
-          else
-            workStep = AutoStep.step00;
-
-          break;
-
-
-      }
-    }
-
-    Stopwatch swConv;
-
-
-    void InspSeq()   //검사 단계 sequence : 완성도 85%
-    {
-      switch (inspStep) {
-        case AutoStep.Ready:
-          inspStep = AutoStep.step00;
-
-          break;
-        case AutoStep.step00:
-          if (bInspExist == true) {
-            swConv = new Stopwatch();
-            Convy.On();
-            swConv.Start();
-            inspStep = AutoStep.step10;
-            bInspExist = false;
-            status = EqpStatus.Run;
-          }
-          else {
-            inspStep = AutoStep.Ready;
-          }
-          break;
-          case AutoStep.step10:
-            if (swConv.ElapsedMilliseconds > Global.INSPECT_TIME)
+            foreach (string line in File.ReadAllLines(ColorConfigPath))
             {
-              Convy.Off();
-              swConv.Stop();
+                string[] parts = line.Split(new[] { '=' }, 2);
 
-              try
-              {
-                Func<bool> inspect = SearchColor;
+                if (parts.Length != 2)
+                    continue;
 
-                bool detected = inspect();
+                int index = Array.IndexOf(colorParamNames, parts[0].Trim());
+                int value;
 
-                inspStep = detected ? AutoStep.step200 : AutoStep.step100;
-
-                OnMsg(detected
-                  ? "색상 검출 → step200"
-                  : "색상 미검출 → step100");
-              }
-              catch (Exception ex)
-              {
-                OnMsg("색상 검사 실패: " + ex.Message);
-                cmd = EqpCmd.EStop;
-              }
+                if (index >= 0 && int.TryParse(parts[1].Trim(), out value)
+                    && value >= 0 && value <= 255)
+                {
+                    colorParamValues[index] = value;
+                }
             }
-            break;
-        case AutoStep.step100:                  //conv on, convstopwatch 재시작
-          Convy.On();
-          swConv.Restart();
-          inspStep = AutoStep.step110;
-          break;
-        case AutoStep.step110: //취출위치 도착하면 conv off하고 unldcyl 전진
-          Console.WriteLine("time 1: " + DateTime.Now + " " + swConv);
-          if (swConv.ElapsedMilliseconds > 300) {
-            UnldCyl.On();
-            Console.WriteLine("time 2: " + DateTime.Now + " " + swConv);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("색상 설정 불러오기 실패: " + ex.Message);
+        }
+    }
 
-            swConv.Stop();    //컨베이어 생성 위치에 따라 Reset이 필요할 수 있음. --> Reset사용이 바람직.
-            Thread.Sleep(2000);
-            UnldCyl.Off();
-            Thread.Sleep(1000);
-
-            inspStep = AutoStep.step120;
-          }
-          Console.WriteLine("time 3: " + DateTime.Now + " " + swConv);
-          break;
-        case AutoStep.step120: //unldcyl 전진 확인하여  unldcyl 후진
-          Thread.Sleep(1000);
-          UnldCyl.Off();
-          inspStep = AutoStep.step130;
-          break;
-        case AutoStep.step130: //unldcyl 후진 확인하여 컴플릿
-          if (UnldCyl.IsOff() == true)     //io.X[6], unldcyl이 후진이면
+    private void btnSave_Click(object sender, EventArgs e)
+    {
+      if (!(cbxColor.SelectedItem is ColorChannel color)
+          || !(cbxLowUpper.SelectedItem is ColorLevel level))
           {
-            inspStep = AutoStep.Complete;
+            MessageBox.Show("색상과 Low 또는 Upper를 선택하세요.");
+            return;
           }
-          break;
-        case AutoStep.step200: // 비금속(양품) // conv on
-          Convy.On();
-          inspStep = AutoStep.step210;
-          break;
-        case AutoStep.step210: //ENDSEN 감지되면 CONV OFF
-          if (io.X[(int)IOMapX.ConveyorEndSen] == true)           //io.X[16]
-          {
-            Thread.Sleep(300);
-            Convy.Off();
-            inspStep = AutoStep.step220;
-          }
-          break;
-        case AutoStep.step220: //ENDSEN 감지 해제되면 컴플릿 
-          if (io.X[(int)IOMapX.ConveyorEndSen] == false) {
-            inspStep = AutoStep.step230;
-          }
-          break;
-        case AutoStep.step230: //CMD 확인하여 CYCLESTOP, ONE CYCLE START면 Ready Step으로 (STATUS = READY로 변경)
-                               //CONTICYCLESTART면, STEP00으로(재공과 투입된 WORK가 없으면 STATUS=IDLE로)
-          if (cmd == EqpCmd.ContiCycleStop) {
-            inspStep = AutoStep.Complete;
-          }
-          else if (cmd == EqpCmd.CycleStop || cmd == EqpCmd.OneCycleStart) {
-            inspStep = AutoStep.Ready;
-            status = EqpStatus.Stop;
-          }
-          break;
-        case AutoStep.Complete:
-          inspStep = AutoStep.Ready;
-          status = EqpStatus.Idle;
-          Convy.Off();
-          break;
-      }
 
-    }
+          string paramName = $"{color}{level}Level";
 
-    void OnMsg(string msg) {
-      if (OnMsgEvent != null) OnMsgEvent(msg);
-    }
+      int index = Array.IndexOf(colorParamNames, paramName);
 
-    public bool MultMoveAbs(TeachList pos) {
-      var axisNums = new ushort[] { Global.X_AXIS_NUM, Global.Y_AXIS_NUM };
-      var axisPos = new double[] { Teach[pos].X, Teach[pos].Y };
-      var axisDir = new NMC.MC_DIRECTION[] {
-                NMC.MC_DIRECTION.mcCurrentDirection, NMC.MC_DIRECTION.mcCurrentDirection };
-
-      Status ms = NMC.MC_MoveAbsoluteMultiAxis(Global.BOARD_ID, 2, axisNums, axisPos,
-          XAxis.Param[ParamList.AbsVel],
-          XAxis.Param[ParamList.AbsAcc],
-          XAxis.Param[ParamList.AbsDec],
-          XAxis.Param[ParamList.AbsJerk],
-          axisDir, 1);
-      if (ms != Status.MC_OK) {
-        OnMsg($"{pos} MultMoveAbs Error : {ms}");
-        return false;
-      }
-      OnMsg($"{pos} MultMoveAbs Start");
-      return true;
-    }
-
-    public bool Home() {
-      // 진공 Off,
-      // 실린더 상승(off)
-      // x, y 축 home
-      // 초기화 완료 여부 확인
-      OnMsg("장비 초기화 시작");
-      PickVac.Off();
-      PickCyl.Off();
-
-      if (XAxis.ServoHome() == false || YAxis.ServoHome() == false)
-        return false;
-
-      Thread.Sleep(1000);
-      int timeout = 0;
-      while (true) {
-        Thread.Sleep(100);
-        if (PickVac.IsOff() && PickCyl.IsOff()
-            && XAxis.Info[AxisMap.IsHomed] && YAxis.Info[AxisMap.IsHomed])
-          break;
-        if (timeout++ > Global.HOME_TIMEOUT) {
-          OnMsg($"장비 초기화 TimeOut : {Global.HOME_TIMEOUT / 10} 초");
-          return false;
-        }
-      }
-      OnMsg("장비 초기화 완료");
-      return true;
-    }
-
-    public bool WorkMove(TeachList from, TeachList to) {
-      int autoStep = 0, oldStep = -1, timeOut = 0;
-      // 초기화 완료 여부
-      if (!(PickVac.IsOff() && PickCyl.IsOff()
-          && XAxis.Info[AxisMap.IsHomed] && YAxis.Info[AxisMap.IsHomed])) {
-        OnMsg("장비 초기화 상태를 확인 하세요");
-        return false;
-      }
-
-      while (true) {
-        Thread.Sleep(100);
-
-        // step간 100이상 정체시 timeout
-        if (autoStep != oldStep) {
-          timeOut = 0;
-          oldStep = autoStep;
-        }
-        else {
-          if (timeOut++ > 100) {
-            OnMsg($"{autoStep} Step Time Out Error : {timeOut}");
-            return false;
-          }
+        if (index < 0)
+        {
+            MessageBox.Show("색상과 Low 또는 Upper를 선택하세요.");
+            return;
         }
 
-        switch (autoStep) {
-          case 0:
-            MultMoveAbs(from);
-            Thread.Sleep(200);
-            autoStep++;
-            break;
-          case 1:
-            // from 이동 완료 체크
-            //xAxis.Info[AxisMap.MotionComplete] 이동 완료
-            if (XAxis.Info[AxisMap.MotionComplete] && YAxis.Info[AxisMap.MotionComplete]) {
-              // 실린더 하강
-              PickCyl.On();
-              autoStep++;
+        int value;
+        if (!int.TryParse(tbRate.Text.Trim(), out value)
+            || value < 0 || value > 255)
+        {
+            MessageBox.Show("0~255 사이의 정수를 입력하세요.");
+            tbRate.Focus();
+            return;
+        }
+
+        try
+        {
+            string path = ColorConfigPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            var lines = new string[colorParamNames.Length];
+
+            for (int i = 0; i < colorParamNames.Length; i++)
+            {
+                int savedValue = i == index ? value : colorParamValues[i];
+                lines[i] = colorParamNames[i] + "=" + savedValue;
             }
-            break;
-          case 2:
-            // 실린더 하강 확인
-            if (PickCyl.IsOn()) {
-              // vac on
-              PickVac.On();
-              autoStep++;
-            }
-            break;
-          case 3:
-            // vac on 확인
-            if (PickVac.IsOn()) {
-              // 실린더 상승
-              PickCyl.Off();
-              autoStep++;
-            }
-            break;
-          case 4:
-            // 실린더 상승 확인
-            if (PickCyl.IsOff()) {
-              // to로 이동
-              MultMoveAbs(to);
-              Thread.Sleep(200);
-              autoStep++;
-            }
-            break;
-          case 5:
-            // to 이동 확인
-            if (XAxis.Info[AxisMap.MotionComplete] && YAxis.Info[AxisMap.MotionComplete]) {
-              // 실린더 하강
-              PickCyl.On();
-              autoStep++;
-            }
-            break;
-          case 6:
-            // 실린더 하강확인
-            if (PickCyl.IsOn()) {
-              // vac off
-              PickVac.Off();
-              autoStep++;
-            }
-            break;
-          case 7:
-            // vac off 확인
-            if (PickVac.IsOff()) {
-              // 시린더 상승
-              PickCyl.Off();
-              autoStep++;
-            }
-            break;
-          case 8:
-            if (PickCyl.IsOff()) {
-              // 시린더 상승 확인
-              return true;
-            }
-            break;
+
+            File.WriteAllLines(path, lines);
+
+            colorParamValues[index] = value;
+            livColorParam.Items[index].SubItems[1].Text = value.ToString();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("색상 설정 저장 실패: " + ex.Message);
+        }
+    }
+
+    public bool Inspection()
+    {
+      Rectangle roiRect = rect;
+
+      if (!hasRoi || roiRect.Width <= 0 || roiRect.Height <= 0)
+        throw new InvalidOperationException("ROI 영역을 먼저 설정하세요.");
+
+      Mat snapshot;
+      lock (frameLock)
+      {
+        snapshot = src?.Clone();
+      }
+
+      using (snapshot)
+      {
+        if (snapshot == null || snapshot.Empty())
+          throw new InvalidOperationException("카메라 영상이 없습니다. Live를 먼저 실행하세요.");
+
+        var imageRect = new Rectangle(0, 0, snapshot.Width, snapshot.Height);
+        Rectangle cropRect = Rectangle.Intersect(roiRect, imageRect);
+
+        if (cropRect.Width <= 0 || cropRect.Height <= 0)
+          throw new InvalidOperationException("ROI가 카메라 영상 범위 밖에 있습니다.");
+
+        var lower = new Scalar(
+          colorParamValues[0], colorParamValues[2], colorParamValues[4]);
+        var upper = new Scalar(
+          colorParamValues[1], colorParamValues[3], colorParamValues[5]);
+
+        using (Mat roi = snapshot[cropRect.Top, cropRect.Bottom,
+                                 cropRect.Left, cropRect.Right])
+        using (var mask = new Mat())
+        {
+          Cv2.InRange(roi, lower, upper, mask);
+          return Cv2.CountNonZero(mask) > 0;
         }
       }
     }
 
+    private void btnSearch_Click(object sender, EventArgs e)
+    {
+      lbJegment.Text = "-";
 
-    public void LampUpdate(EqpStatus status) {
-      switch (status) {
-        case EqpStatus.Ready:
-          LampRed.On(); LampYellow.On(); LampGreen.On();
-          break;
-        case EqpStatus.Stop:
-          LampRed.Off(); LampYellow.Off(); LampGreen.Off();
-          break;
-        case EqpStatus.Error:
-          LampRed.On(); LampYellow.Off(); LampGreen.Off();
-          break;
-        case EqpStatus.Run:
-          LampRed.Off(); LampYellow.Off(); LampGreen.On();
-          break;
-        case EqpStatus.Idle:
-          LampRed.Off(); LampYellow.On(); LampGreen.Off();
-          break;
-        default:
-          break;
+      try
+      {
+        lbJegment.Text = Inspection() ? "검출" : "미검출";
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("색상 검사 실패: " + ex.Message);
       }
     }
 
 
-
-
-
-
-
-
-
+    private async void frmVision_FormClosing(object sender, FormClosingEventArgs e) {
+      if (closingAfterStop) return;
+      if (liveTask != null) {
+        e.Cancel = true;
+        await StopCameraAsync();
+        closingAfterStop = true;
+        Close();
+      }
+      else {
+        Image old = pictureBox2.Image;
+        pictureBox2.Image = null;
+        old?.Dispose();
+      }
+    }
   }
 }
