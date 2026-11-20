@@ -422,12 +422,22 @@ namespace MotionKit {
             inspStep = AutoStep.step220;
           }
           break;
-        case AutoStep.step220: //ENDSEN 감지 해제되면 컴플릿 
+        case AutoStep.step220: //ENDSEN 감지 해제 후 LD 위치로 이동
           if (io.X[(int)IOMapX.ConveyorEndSen] == false) {
-            inspStep = AutoStep.step230;
+            if (MultMoveAbs(TeachList.Pos_LD)) {
+              inspStep = AutoStep.step230;
+            }
+            else {
+              cmd = EqpCmd.EStop;
+            }
           }
           break;
-        case AutoStep.step230: //CMD 확인하여 CYCLESTOP, ONE CYCLE START면 Ready Step으로 (STATUS = READY로 변경)
+        case AutoStep.step230: //X, Y축 모두 LD 위치 이동 완료를 기다림
+          if (XAxis.Info[AxisMap.MotionComplete] && YAxis.Info[AxisMap.MotionComplete]) {
+            inspStep = AutoStep.step240;
+          }
+          break;
+        case AutoStep.step240: //CMD 확인하여 CYCLESTOP, ONE CYCLE START면 Ready Step으로 (STATUS = READY로 변경)
                                //CONTICYCLESTART면, STEP00으로(재공과 투입된 WORK가 없으면 STATUS=IDLE로)
           if (cmd == EqpCmd.ContiCycleStop) {
             inspStep = AutoStep.Complete;
