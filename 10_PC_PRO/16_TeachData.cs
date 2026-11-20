@@ -22,6 +22,17 @@ namespace MotionKit {
       set { teach[idx] = value; }
     }
 
+    public bool TryGetLoadPosition(out DPoint position) {
+      return teach.TryGetValue(TeachList.LD, out position);
+    }
+
+    public void RestoreLoadPosition(DPoint position) {
+      if (position == null)
+        teach.Remove(TeachList.LD);
+      else
+        teach[TeachList.LD] = position;
+    }
+
     public void Load() {
       Dictionary<string, string> dic = fileHelper.FileLoad();
 
@@ -36,6 +47,15 @@ namespace MotionKit {
         }
         if (teach.ContainsKey(item) == false)
           teach.Add(item, value);
+      }
+      string loadPosition;
+      DPoint loadPoint;
+      if (dic.TryGetValue(TeachList.LD.ToString(), out loadPosition)
+          && DPoint.TryParse(loadPosition, out loadPoint)) {
+        teach[TeachList.LD] = loadPoint;
+      }
+      else {
+        teach.Remove(TeachList.LD);
       }
       Save();
     }
