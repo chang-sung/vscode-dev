@@ -320,7 +320,11 @@ namespace MotionKit {
 
           //}
 
-          if (cmd == EqpCmd.CycleStop || cmd == EqpCmd.OneCycleStart)
+          // OneCycleStart는 검사까지 완료될 때까지 이 단계에서 대기한다.
+          if (cmd == EqpCmd.OneCycleStart)
+            break;
+
+          if (cmd == EqpCmd.CycleStop)
             workStep = AutoStep.Ready;
           else
             workStep = AutoStep.step00;
@@ -432,18 +436,35 @@ namespace MotionKit {
           if (cmd == EqpCmd.ContiCycleStop) {
             inspStep = AutoStep.Complete;
           }
-          else if (cmd == EqpCmd.CycleStop || cmd == EqpCmd.OneCycleStart) {
+          else if (cmd == EqpCmd.OneCycleStart) {
+            FinishOneCycle();
+          }
+          else if (cmd == EqpCmd.CycleStop) {
             inspStep = AutoStep.Ready;
             status = EqpStatus.Stop;
           }
           break;
         case AutoStep.Complete:
-          inspStep = AutoStep.Ready;
-          status = EqpStatus.Idle;
-          Convy.Off();
+          if (cmd == EqpCmd.OneCycleStart) {
+            FinishOneCycle();
+          }
+          else {
+            inspStep = AutoStep.Ready;
+            status = EqpStatus.Idle;
+            Convy.Off();
+          }
           break;
       }
 
+    }
+
+    // 작업과 검사가 모두 끝난 뒤에만 OneCycle 명령을 종료한다.
+    void FinishOneCycle() {
+      Convy.Off();
+      workStep = AutoStep.Ready;
+      inspStep = AutoStep.Ready;
+      cmd = EqpCmd.None;
+      status = EqpStatus.Ready;
     }
 
     void OnMsg(string msg) {
