@@ -16,6 +16,8 @@ namespace MotionKit {
       this.machine = machine;
       MoveRelativeBtnClickEventChain();
       TeachListViewUpdate();
+      btnLdTeach.Click -= btnLdTeach_Click;
+      btnLdTeach.Click += btnLdTeach_Click;
     }
 
     Machine machine;
@@ -97,7 +99,7 @@ namespace MotionKit {
       double curYpos = machine.YAxis.Info.ActPos;
       // 21포인트에 대한 Teaching 
 
-      for (TeachList pos = 0; pos < TeachList.Max; pos++) {
+      for (TeachList pos = 0; pos < TeachList.Pos_LD; pos++) {
         int xIdx = (int)pos % 7;
         int yIdx = (int)pos / 7;
 
@@ -108,6 +110,13 @@ namespace MotionKit {
       }
 
       // 저장
+      machine.Teach.Save();
+      TeachListViewUpdate();
+    }
+
+    private void btnLdTeach_Click(object sender, EventArgs e) {
+      machine.Teach[TeachList.Pos_LD].SetValue(
+        machine.XAxis.Info.ActPos, machine.YAxis.Info.ActPos);
       machine.Teach.Save();
       TeachListViewUpdate();
     }
