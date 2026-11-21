@@ -1,12 +1,16 @@
+using Helper;
+using OpenCvSharp;
+using OpenCvSharp.Extensions;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Helper;
-using OpenCvSharp;
-using OpenCvSharp.Extensions;
+
+using System.Globalization;
+using System.Text.RegularExpressions;
 using CvRect = OpenCvSharp.Rect;
 
 namespace MotionKit {
@@ -23,6 +27,10 @@ namespace MotionKit {
     private System.Drawing.Point startPoint;
     private int imageWidth, imageHeight;
     private bool closingAfterStop = false;
+    public bool IsCameraConnected { get; private set; }
+    public event EventHandler CameraConnectionChanged;
+
+
 
     public frmVision() {
       InitializeComponent();
@@ -52,6 +60,8 @@ namespace MotionKit {
 
       btnSave.Click += btnSave_Click;
       btnSearch.Click += btnSearch_Click;
+      PreviewTimer.Start();
+      FormClosed += (s, e) => { PreviewTimer.Stop(); PreviewTimer.Dispose(); };
     }
 
     private void InitRoiListView() {
@@ -68,6 +78,28 @@ namespace MotionKit {
     }
 
     private void btnLive_Click(object sender, EventArgs e) {
+      StartLive();
+    }
+
+    private void UpdateLiveButtons()
+    {
+      btnLive.Enabled = !IsCameraConnected;
+      btnLiveStop.Enabled = IsCameraConnected;
+    }
+
+    private void SetCameraConnection(bool connected)
+    {
+      bool changed = IsCameraConnected != connected;
+      IsCameraConnected = connected;
+      UpdateLiveButtons();
+
+      if (changed)
+        CameraConnectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+
+
+    public void StartLive() {
       if (liveTask != null) return;
       btnLive.Enabled = false;
       try {
@@ -78,8 +110,7 @@ namespace MotionKit {
           capture = null;
           return;
         }
-        capture.Set(VideoCaptureProperties.FrameWidth, 1600);
-        capture.Set(VideoCaptureProperties.FrameHeight, 1200);
+
         liveCts = new CancellationTokenSource();
         CancellationToken token = liveCts.Token;
         liveTask = Task.Run(() => CameraLoop(token));
@@ -88,54 +119,81 @@ namespace MotionKit {
         MessageBox.Show(ex.Message);
         capture?.Dispose();
         capture = null;
+        liveCts?.Dispose();
+        liveCts = null;
       }
-      finally { btnLive.Enabled = true; }
+      finally {
+        SetCameraConnection(liveTask != null);
+      }
+
     }
 
     // 수업에서 사용한 Mat / ToBitmap()으로 프레임 처리
+    //private void CameraLoop(CancellationToken token) {
+    //  using (Mat frame = new Mat()) {
+    //    try {
+    //      while (!token.IsCancellationRequested) {
+    //        if (!capture.Read(frame) || frame.Empty()) {
+    //          Thread.Sleep(30);
+    //          continue;
+    //        }
+    //        // ROI Save는 src.Clone()으로 현재 프레임을 안전하게 복사
+    //        lock (frameLock) {
+    //          Mat old = src;
+    //          src = frame.Clone();
+    //          old?.Dispose();
+    //        }
+    //        Bitmap bitmap = frame.ToBitmap();
+    //        try {
+    //          // BeginInvoke 작업이 누적되지 않도록 UI 처리 완료를 기다림
+    //          IAsyncResult result = pictureBox1.BeginInvoke(new Action(() => {
+    //            if (token.IsCancellationRequested || pictureBox1.IsDisposed) {
+    //              bitmap.Dispose();
+    //              return;
+    //            }
+    //            imageWidth = bitmap.Width;
+    //            imageHeight = bitmap.Height;
+    //            Image oldImage = pictureBox1.Image;
+    //            pictureBox1.Image = bitmap;
+    //            oldImage?.Dispose();
+    //            pictureBox1.Invalidate();
+    //          }));
+    //          // 작업 취소 시에도 위 콜백이 Bitmap을 정리함
+    //          while (!result.IsCompleted && !token.IsCancellationRequested)
+    //            Thread.Sleep(5);
+    //        }
+    //        catch (InvalidOperationException) {
+    //          bitmap.Dispose();
+    //          break;
+    //        }
+    //        Thread.Sleep(33);
+    //      }
+    //    }
+    //    catch (Exception ex) {
+    //      System.Diagnostics.Debug.WriteLine(ex.Message);
+    //    }
+    //  }
+    //}
+
     private void CameraLoop(CancellationToken token) {
       using (Mat frame = new Mat()) {
         try {
           while (!token.IsCancellationRequested) {
             if (!capture.Read(frame) || frame.Empty()) {
-              Thread.Sleep(30);
+              Thread.Sleep(100);
               continue;
             }
-            // ROI Save는 src.Clone()으로 현재 프레임을 안전하게 복사
             lock (frameLock) {
               Mat old = src;
               src = frame.Clone();
               old?.Dispose();
             }
-            Bitmap bitmap = frame.ToBitmap();
-            try {
-              // BeginInvoke 작업이 누적되지 않도록 UI 처리 완료를 기다림
-              IAsyncResult result = pictureBox1.BeginInvoke(new Action(() =>
-              {
-                if (token.IsCancellationRequested || pictureBox1.IsDisposed) {
-                  bitmap.Dispose();
-                  return;
-                }
-                imageWidth = bitmap.Width;
-                imageHeight = bitmap.Height;
-                Image oldImage = pictureBox1.Image;
-                pictureBox1.Image = bitmap;
-                oldImage?.Dispose();
-                pictureBox1.Invalidate();
-              }));
-              // 작업 취소 시에도 위 콜백이 Bitmap을 정리함
-              while (!result.IsCompleted && !token.IsCancellationRequested)
-                Thread.Sleep(5);
-            }
-            catch (InvalidOperationException) {
-              bitmap.Dispose();
-              break;
-            }
             Thread.Sleep(33);
           }
         }
         catch (Exception ex) {
-          System.Diagnostics.Debug.WriteLine(ex.Message);
+          System.Diagnostics.Debug.WriteLine(ex.ToString());
+          throw;
         }
       }
     }
@@ -145,11 +203,24 @@ namespace MotionKit {
     }
 
     private async Task StopCameraAsync() {
-      if (liveCts == null) return;
+      Task task = liveTask;
+      if (task == null) return;
+
       btnLive.Enabled = false;
       btnLiveStop.Enabled = false;
       liveCts.Cancel();
-      if (liveTask != null) await liveTask;
+
+      try
+      {
+        await task;
+      }
+      catch (Exception ex)
+      {
+        Debug.WriteLine(ex);
+      }
+
+      if (liveTask != task) return;
+
       capture?.Release();
       capture?.Dispose();
       capture = null;
@@ -163,8 +234,7 @@ namespace MotionKit {
       Image old = pictureBox1.Image;
       pictureBox1.Image = null;
       old?.Dispose();
-      btnLive.Enabled = true;
-      btnLiveStop.Enabled = true;
+      SetCameraConnection(false);
     }
 
     // PictureBox Zoom이 만든 여백을 고려하여 영상 영역 계산
@@ -318,13 +388,11 @@ namespace MotionKit {
       }
     }
 
-    private string ColorConfigPath
-    {
-        get
-        {
-            return Path.GetFullPath(
-                Path.Combine(Global.ParamPath, Global.Color_Config_NAME + ".txt"));
-        }
+    private string ColorConfigPath {
+      get {
+        return Path.GetFullPath(
+            Path.Combine(Global.ParamPath, Global.Color_Config_NAME + ".txt"));
+      }
     }
 
     private readonly string[] colorParamNames =
@@ -337,118 +405,111 @@ namespace MotionKit {
         "RedUpperLevel"
     };
 
-    private readonly int[] colorParamValues = { 0, 255, 0, 255, 0, 255 };
+    private volatile int[] colorParamValues = { 0, 255, 0, 255, 0, 255 };
 
 
-    private void UpdateColorListView()
-    {
-        livColorParam.Items.Clear();
+    private void UpdateColorListView() {
+      livColorParam.Items.Clear();
 
-        for (int i = 0; i < colorParamNames.Length; i++)
-        {
-            var item = new ListViewItem(colorParamNames[i]);
-            item.SubItems.Add(colorParamValues[i].ToString());
-            livColorParam.Items.Add(item);
-        }
+      for (int i = 0; i < colorParamNames.Length; i++) {
+        var item = new ListViewItem(colorParamNames[i]);
+        item.SubItems.Add(colorParamValues[i].ToString());
+        livColorParam.Items.Add(item);
+      }
     }
 
-    private void LoadColorConfig()
-    {
-        try
-        {
-            if (!File.Exists(ColorConfigPath))
-                return;
+    private void LoadColorConfig() {
+      try {
+        if (!File.Exists(ColorConfigPath))
+          return;
 
-            foreach (string line in File.ReadAllLines(ColorConfigPath))
-            {
-                string[] parts = line.Split(new[] { '=' }, 2);
+        foreach (string line in File.ReadAllLines(ColorConfigPath)) {
+          string[] parts = line.Split(new[] { '=' }, 2);
 
-                if (parts.Length != 2)
-                    continue;
+          if (parts.Length != 2)
+            continue;
 
-                int index = Array.IndexOf(colorParamNames, parts[0].Trim());
-                int value;
+          int index = Array.IndexOf(colorParamNames, parts[0].Trim());
+          int value;
 
-                if (index >= 0 && int.TryParse(parts[1].Trim(), out value)
-                    && value >= 0 && value <= 255)
-                {
-                    colorParamValues[index] = value;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("색상 설정 불러오기 실패: " + ex.Message);
-        }
-    }
-
-    private void btnSave_Click(object sender, EventArgs e)
-    {
-      if (!(cbxColor.SelectedItem is ColorChannel color)
-          || !(cbxLowUpper.SelectedItem is ColorLevel level))
-          {
-            MessageBox.Show("색상과 Low 또는 Upper를 선택하세요.");
-            return;
+          if (index >= 0 && int.TryParse(parts[1].Trim(), out value)
+              && value >= 0 && value <= 255) {
+            colorParamValues[index] = value;
           }
+        }
+      }
+      catch (Exception ex) {
+        MessageBox.Show("색상 설정 불러오기 실패: " + ex.Message);
+      }
+    }
 
-          string paramName = $"{color}{level}Level";
+    private void btnSave_Click(object sender, EventArgs e) {
+      if (!(cbxColor.SelectedItem is ColorChannel color)
+          || !(cbxLowUpper.SelectedItem is ColorLevel level)) {
+        MessageBox.Show("색상과 Low 또는 Upper를 선택하세요.");
+        return;
+      }
+
+      string paramName = $"{color}{level}Level";
 
       int index = Array.IndexOf(colorParamNames, paramName);
 
-        if (index < 0)
-        {
-            MessageBox.Show("색상과 Low 또는 Upper를 선택하세요.");
-            return;
+      if (index < 0) {
+        MessageBox.Show("색상과 Low 또는 Upper를 선택하세요.");
+        return;
+      }
+
+      int value;
+      if (!int.TryParse(tbRate.Text.Trim(), out value)
+          || value < 0 || value > 255) {
+        MessageBox.Show("0~255 사이의 정수를 입력하세요.");
+        tbRate.Focus();
+        return;
+      }
+
+      try {
+        string path = ColorConfigPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+        var lines = new string[colorParamNames.Length];
+
+        for (int i = 0; i < colorParamNames.Length; i++) {
+          int savedValue = i == index ? value : colorParamValues[i];
+          lines[i] = colorParamNames[i] + "=" + savedValue;
         }
 
-        int value;
-        if (!int.TryParse(tbRate.Text.Trim(), out value)
-            || value < 0 || value > 255)
-        {
-            MessageBox.Show("0~255 사이의 정수를 입력하세요.");
-            tbRate.Focus();
-            return;
-        }
+        File.WriteAllLines(path, lines);
 
-        try
-        {
-            string path = ColorConfigPath;
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-
-            var lines = new string[colorParamNames.Length];
-
-            for (int i = 0; i < colorParamNames.Length; i++)
-            {
-                int savedValue = i == index ? value : colorParamValues[i];
-                lines[i] = colorParamNames[i] + "=" + savedValue;
-            }
-
-            File.WriteAllLines(path, lines);
-
-            colorParamValues[index] = value;
-            livColorParam.Items[index].SubItems[1].Text = value.ToString();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("색상 설정 저장 실패: " + ex.Message);
-        }
+        colorParamValues[index] = value;
+        livColorParam.Items[index].SubItems[1].Text = value.ToString();
+      }
+      catch (Exception ex) {
+        MessageBox.Show("색상 설정 저장 실패: " + ex.Message);
+      }
     }
 
     public bool Inspection()
     {
+      Bitmap cropImage;
+      bool detected = Inspection(out cropImage);
+      cropImage.Dispose();
+      return detected;
+    }
+
+    public bool Inspection(out Bitmap cropImage)
+    {
+      cropImage = null;
       Rectangle roiRect = rect;
 
       if (!hasRoi || roiRect.Width <= 0 || roiRect.Height <= 0)
         throw new InvalidOperationException("ROI 영역을 먼저 설정하세요.");
 
       Mat snapshot;
-      lock (frameLock)
-      {
+      lock (frameLock) {
         snapshot = src?.Clone();
       }
 
-      using (snapshot)
-      {
+      using (snapshot) {
         if (snapshot == null || snapshot.Empty())
           throw new InvalidOperationException("카메라 영상이 없습니다. Live를 먼저 실행하세요.");
 
@@ -458,38 +519,105 @@ namespace MotionKit {
         if (cropRect.Width <= 0 || cropRect.Height <= 0)
           throw new InvalidOperationException("ROI가 카메라 영상 범위 밖에 있습니다.");
 
-        var lower = new Scalar(
-          colorParamValues[0], colorParamValues[2], colorParamValues[4]);
-        var upper = new Scalar(
-          colorParamValues[1], colorParamValues[3], colorParamValues[5]);
+        int[] values = colorParamValues;
+
+        var lower = new Scalar(values[0], values[2], values[4]);
+        var upper = new Scalar(values[1], values[3], values[5]);
 
         using (Mat roi = snapshot[cropRect.Top, cropRect.Bottom,
                                  cropRect.Left, cropRect.Right])
-        using (var mask = new Mat())
-        {
+        using (var mask = new Mat()) {
           Cv2.InRange(roi, lower, upper, mask);
-          return Cv2.CountNonZero(mask) > 0;
+          bool detected = Cv2.CountNonZero(mask) > 0;
+          cropImage = roi.ToBitmap();
+          return detected;
         }
       }
     }
 
-    private void btnSearch_Click(object sender, EventArgs e)
-    {
-      lbJegment.Text = "-";
+    private void btnSearch_Click(object sender, EventArgs e) {
+      lbJegement.Text = "-";
 
-      try
-      {
-        lbJegment.Text = Inspection() ? "검출" : "미검출";
+      try {
+        lbJegement.Text = Inspection() ? "OK" : "NG";
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
         MessageBox.Show("색상 검사 실패: " + ex.Message);
       }
     }
 
+    private void PreviewTimer_Tick(object sender, EventArgs e) {
+      if (!Visible) return;
+
+      Mat snapshot;
+      lock (frameLock) {
+        snapshot = src?.Clone();
+      }
+
+      using (snapshot) {
+
+        if (snapshot == null || snapshot.Empty()) return;
+        Bitmap bitmap = snapshot.ToBitmap();
+        Image oldImage = pictureBox1.Image;
+
+        pictureBox1.Image = bitmap;
+        oldImage?.Dispose();
+
+        imageWidth = bitmap.Width;
+        imageHeight = bitmap.Height;
+        pictureBox1.Invalidate();
+      
+      }
+    }
+
+    public bool TryApplyRecipe(string recipeName, out string error)
+    {
+      error = null;
+
+      var match = Regex.Match(
+          recipeName ?? string.Empty,
+          @"\A(?:BLUE|NONBLUE)_([0-9]{9})_([0-9]{9})\z");
+
+      if (!match.Success)
+      {
+        error = "레시피 형식을 확인하세요. 예) BLUE_030100150_255200220";
+        return false;
+      }
+
+      string lowerBgr = match.Groups[1].Value;
+      string upperBgr = match.Groups[2].Value;
+      var values = new int[6];
+
+      for (int channel = 0; channel < 3; channel++)
+      {
+        int offset = channel * 3;
+        int lower = int.Parse(lowerBgr.Substring(offset, 3),
+                              CultureInfo.InvariantCulture);
+        int upper = int.Parse(upperBgr.Substring(offset, 3),
+                              CultureInfo.InvariantCulture);
+
+        if (upper > 255 || lower > upper)
+        {
+          error = "BGR 값은 000~255 범위이며, 하한은 상한 이하여야 합니다.";
+          return false;
+        }
+
+        values[channel * 2] = lower;
+        values[channel * 2 + 1] = upper;
+      }
+
+      colorParamValues = values;
+      UpdateColorListView();
+      return true;
+    }
 
     private async void frmVision_FormClosing(object sender, FormClosingEventArgs e) {
-      if (closingAfterStop) return;
+      if (e.CloseReason == CloseReason.UserClosing && !closingAfterStop)
+      {
+        e.Cancel = true;
+        Hide();
+        return;
+      }
       if (liveTask != null) {
         e.Cancel = true;
         await StopCameraAsync();

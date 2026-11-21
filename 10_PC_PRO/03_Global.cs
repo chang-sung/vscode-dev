@@ -35,24 +35,23 @@ namespace Helper {
     Complete
   }
 
-  public enum ColorChannel
-  {
+  public enum ColorChannel {
     Blue,
     Green,
     Red
   }
 
-  public enum ColorLevel
-  {
+  public enum ColorLevel {
     Low,
     Upper
   }
 
+
   public class Global {
 
-    
+
     public const int DRILL_TIME = 2000;
-    public const int INSPECT_TIME    = 700;
+    public const int INSPECT_TIME = 100;
     public const int UNLD_TIME = 700;
 
     public const ushort BOARD_ID = 0;
@@ -69,6 +68,7 @@ namespace Helper {
 
     public const string ROI_Config_NAME = "ROI_Config";
     public const string Color_Config_NAME = "Color_Config";
+    public const string Recipe_Config_NAME = "Recipe_Config";
 
     public const string ParamPath = "..\\..\\..\\Param\\";
     public const string TeachPath = "..\\..\\..\\Teach\\";
