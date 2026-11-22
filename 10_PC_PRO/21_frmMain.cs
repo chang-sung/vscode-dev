@@ -9,20 +9,26 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Helper;
 
-namespace MotionKit {
-  public partial class frmMain : Form {
+namespace MotionKit
+{
+  public partial class frmMain : Form
+  {
     private IO io;
     private Machine machine;
     private LogHelper log;
 
     private readonly object logLock = new object();
     private bool initialized;
+    private EqpMode? operationMode;
+    private EqpMode? selectedMode;
 
     private Action<string> showMessage;
     private frmVision vision;
 
-    public frmMain() {
+    public frmMain()
+    {
       InitializeComponent();
+      UpdateModeControls();
       UpdateVisionStatus(false);
       lbVision_Value.Text = "Disconnect";
 
@@ -30,7 +36,8 @@ namespace MotionKit {
 
     }
 
-    private void frmMain_Load(object sender, EventArgs e) {
+    private void frmMain_Load(object sender, EventArgs e)
+    {
       if (initialized)
         return;
 
@@ -53,12 +60,12 @@ namespace MotionKit {
       vision = new frmVision();
       vision.CameraConnectionChanged += Vision_CameraConnectionChanged;
       machine.ProductUnloadPositionSelected += Machine_ProductUnloadPositionSelected;
-      
+
       machine.SearchColor = vision.Inspection;
       vision.StartLive();                        // 카메라 연결
 
       machine.InspectionCompleted += DisplayInspectionResult;
-      
+
 
       machine.XAxis.OnMsgEvent += WriteLog;
       machine.YAxis.OnMsgEvent += WriteLog;
@@ -68,15 +75,18 @@ namespace MotionKit {
       machine.XAxis.ServoOn();
       machine.YAxis.ServoOn();
 
+      UpdateModeControls();
       tmUIUpdate.Start();
     }
 
-    private void tmUIUpdate_Tick(object sender, EventArgs e) {
+    private void tmUIUpdate_Tick(object sender, EventArgs e)
+    {
       if (machine == null)
         return;
 
       LampColorUpdate();
       EqpStatusColorUpdate();
+      UpdateModeControls();
       label1.Text = machine.ConvElapsedTime.ToString();
       lbProductOkValue.Text = machine.ProductOkCount.ToString();
       lbProductNgValue.Text = machine.ProductNgCount.ToString();
@@ -136,22 +146,17 @@ namespace MotionKit {
       lbInspResult.Text = detected ? "OK" : "NG";
     }
 
-    void LampColorUpdate() {
+    void LampColorUpdate()
+    {
       lbLampRed.BackColor = machine.LampRed.IsOn() ? Color.Red : Color.LightGray;
       lbLampYellow.BackColor = machine.LampYellow.IsOn() ? Color.Yellow : Color.LightGray;
       lbLampGreen.BackColor = machine.LampGreen.IsOn() ? Color.Green : Color.LightGray;
     }
 
-
     void EqpStatusColorUpdate()
     {
-      EqpStatus currentStatus = machine.eqpStatus;
-      lbProcessStatus_Value.Text = currentStatus.ToString();
-
-      SetRunButtonsEnabled(
-          machine.CanStartCycle || currentStatus == EqpStatus.Stop);
-
-      switch (currentStatus)
+      lbProcessStatus_Value.Text = machine.eqpStatus.ToString();
+      switch (machine.eqpStatus)
       {
         case EqpStatus.Ready:
           lbProcessStatus_Value.BackColor = Color.Brown;
@@ -173,15 +178,18 @@ namespace MotionKit {
 
 
     // 서보 창의 열림 여부와 관계없이 로그 기록
-    private void WriteLog(string msg) {
-      lock (logLock) {
+    private void WriteLog(string msg)
+    {
+      lock (logLock)
+      {
         log.Write(msg);
       }
 
       showMessage?.Invoke(msg);
     }
 
-    private void btnServo_Click(object sender, EventArgs e) {
+    private void btnServo_Click(object sender, EventArgs e)
+    {
       if (machine == null)
         return;
 
@@ -192,7 +200,8 @@ namespace MotionKit {
       form.Show(this);
     }
 
-    private void btnIO_Click(object sender, EventArgs e) {
+    private void btnIO_Click(object sender, EventArgs e)
+    {
       if (ActivateOpenForm<frmIO>())
         return;
 
@@ -211,7 +220,8 @@ namespace MotionKit {
     }
 
 
-    private void btnVision_Click(object sender, EventArgs e) {
+    private void btnVision_Click(object sender, EventArgs e)
+    {
       if (vision == null || vision.IsDisposed) return;
 
       vision.Show(this);
@@ -219,10 +229,14 @@ namespace MotionKit {
     }
 
     // 같은 종류의 창이 열려 있으면 앞으로 가져오기
-    private bool ActivateOpenForm<T>() where T : Form {
-      foreach (Form form in Application.OpenForms) {
-        if (form is T) {
-          if (form.WindowState == FormWindowState.Minimized) {
+    private bool ActivateOpenForm<T>() where T : Form
+    {
+      foreach (Form form in Application.OpenForms)
+      {
+        if (form is T)
+        {
+          if (form.WindowState == FormWindowState.Minimized)
+          {
             form.WindowState = FormWindowState.Normal;
           }
 
@@ -234,15 +248,19 @@ namespace MotionKit {
       return false;
     }
 
-    private void DisplayMessage(string msg) {
+    private void DisplayMessage(string msg)
+    {
       if (IsDisposed || Disposing || !IsHandleCreated)
         return;
 
-      if (InvokeRequired) {
-        try {
+      if (InvokeRequired)
+      {
+        try
+        {
           BeginInvoke(new Action<string>(DisplayMessage), msg);
         }
-        catch (InvalidOperationException) {
+        catch (InvalidOperationException)
+        {
           // 폼을 닫는 중이면 표시하지 않음
         }
 
@@ -279,12 +297,15 @@ namespace MotionKit {
     }
 
 
-    protected override void OnFormClosed(FormClosedEventArgs e) {
-      if (io != null) {
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+      if (io != null)
+      {
         io.OnMsgEvent -= WriteLog;
       }
 
-      if (machine != null) {
+      if (machine != null)
+      {
         machine.XAxis.OnMsgEvent -= WriteLog;
         machine.YAxis.OnMsgEvent -= WriteLog;
         machine.InspectionCompleted -= DisplayInspectionResult;
@@ -295,38 +316,74 @@ namespace MotionKit {
 
       base.OnFormClosed(e);
     }
-    private void SetRunButtonsEnabled(bool enabled)
+
+    private void UpdateModeControls()
     {
-      btnOneCycleRun.Enabled = enabled;
-      btnAutoRun.Enabled = enabled;
+      EqpStatus? status = machine?.eqpStatus;
+
+      if (status == EqpStatus.Error)
+        operationMode = EqpMode.Manual; // 초기화 버튼으로 복구 가능
+      else if (status == EqpStatus.Stop && operationMode == EqpMode.Auto)
+        operationMode = null;
+
+      bool isAutoMode = operationMode == EqpMode.Auto;
+      btnManual.Enabled = status == EqpStatus.Stop && !isAutoMode;
+      btnAuto.Enabled = status == EqpStatus.Ready;
+      Manual.Enabled = operationMode == EqpMode.Manual;
+
+      bool canEnableRunButtons = selectedMode == EqpMode.Auto &&
+      (status == EqpStatus.Ready ||
+       status == EqpStatus.Stop ||
+       status == EqpStatus.Error);
+
+      btnOneCycleRun.Enabled = canEnableRunButtons;
+      btnAutoRun.Enabled = canEnableRunButtons;
+      lbEqpStatus_Value.Text = selectedMode?.ToString() ?? "-";
     }
 
+    private void btnAuto_Click(object sender, EventArgs e)
+    {
+      if (machine?.eqpStatus != EqpStatus.Ready)
+        return;
 
+      selectedMode = operationMode = EqpMode.Auto;
+      UpdateModeControls();
+    }
+
+    private void btnManual_Click(object sender, EventArgs e)
+    {
+      if (machine?.eqpStatus != EqpStatus.Stop)
+        return;
+
+      selectedMode = operationMode = EqpMode.Manual;
+      UpdateModeControls();
+    }
 
     private void btnOneCycleRun_Click(object sender, EventArgs e)
     {
-      if (machine?.CmdOneCycleStart() == true)
-        SetRunButtonsEnabled(false);
+      if (operationMode == EqpMode.Auto)
+        machine?.CmdOneCycleStart();
     }
 
-    private void btnInit_Click(object sender, EventArgs e) {
+    private void btnInit_Click(object sender, EventArgs e)
+    {
       machine?.CmdInit();
     }
 
     private void btnAutoRun_Click(object sender, EventArgs e)
     {
-      if (machine?.CmdContCycleStart() == true)
-        SetRunButtonsEnabled(false);
+      if (operationMode == EqpMode.Auto)
+        machine?.CmdContCycleStart();
     }
 
-    private void btnCycleStop_Click(object sender, EventArgs e) {
+    private void btnCycleStop_Click(object sender, EventArgs e)
+    {
       machine?.CmdCycleStop();
-
     }
 
     private void btnStop_Click(object sender, EventArgs e)
     {
-      machine?.CmdEStop();
+      machine.CmdEStop();
     }
 
     private void UpdateVisionStatus(bool isConnected)
