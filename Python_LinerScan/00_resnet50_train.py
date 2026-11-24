@@ -71,6 +71,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 
 # ✅ EarlyStopping & ModelCheckpoint 설정
 best_acc = -1.0
+best_val_loss = float('inf')  # 검증 Loss의 최저값 (최고 Acc와 다른 epoch일 수 있음)
 patience = 5
 counter = 0
 best_model_wts = copy.deepcopy(model.state_dict())
@@ -98,6 +99,45 @@ def estimate_remaining(epoch, phase, batch_idx, phase_batches, seconds_per_batch
     return sum(count * (seconds_per_batch[name] or 0.0)
                for name, count in remaining_batches.items())
 
+
+progress_width = 0
+
+
+def update_progress(message, final=False):
+    """같은 콘솔 줄을 갱신하고 epoch가 끝날 때만 줄바꿈합니다."""
+    global progress_width
+    progress_width = max(progress_width, len(message))
+    print("\r" + message.ljust(progress_width),
+          end="\n" if final else "", flush=True)
+    if final:
+        progress_width = 0
+
+
+def show_epoch_progress(epoch, phase, batch_idx, status="", final=False):
+    completed = batch_idx + (phase_batches['train'] if phase == 'val' else 0)
+    percent = 100 * completed / sum(phase_batches.values())
+    best_text = (
+        f"Best Loss {best_val_loss:.4f} Acc {best_acc:.4f}"
+        if best_acc >= 0 else "Best Loss -- Acc --"
+    )
+    remaining = estimate_remaining(
+        epoch, phase, batch_idx, phase_batches, seconds_per_batch
+    )
+    if remaining is None:
+        time_text = "ETA: valid 측정 대기"
+    else:
+        finish_at = datetime.now().astimezone() + timedelta(seconds=remaining)
+        time_text = (
+            f"남음 {format_duration(remaining)} | "
+            f"완료 {finish_at:%m-%d %H:%M:%S %Z}"
+        )
+    update_progress(
+        f"Epoch {epoch+1}/{num_epochs} {percent:5.1f}% [{phase}] | "
+        f"{best_text} | {time_text}"
+        + (f" | {status}" if status else ""),
+        final=final
+    )
+
 # ETA는 최대 num_epochs의 학습 + epoch별 검증 기준입니다.
 # EarlyStopping이면 더 일찍 끝납니다. 최종 평가/그래프 표시 시간은 제외합니다.
 phase_batches = {name: len(dataloaders[name]) for name in ['train', 'val']}
@@ -112,7 +152,6 @@ print(f"완료 예상: 최대 {num_epochs} epoch 기준 / EarlyStopping 시 조�
 
 # ✅ 학습 루프
 for epoch in range(num_epochs):
-    print(f"Epoch {epoch+1}/{num_epochs}", flush=True)
     for phase in ['train', 'val']:
         model.train() if phase == 'train' else model.eval()
 
@@ -121,13 +160,14 @@ for epoch in range(num_epochs):
 
         phase_start = time.perf_counter()
         processed_images = 0
-        print(f"[{phase}] 첫 배치 로딩 대기...", flush=True)
+        show_epoch_progress(epoch, phase, 0, status="로딩 대기")
 
         for batch_idx, (inputs, labels) in enumerate(dataloaders[phase], start=1):
             if batch_idx == 1:
-                print(f"[{phase}] 첫 배치 로딩 완료 "
-                      f"({time.perf_counter() - phase_start:.2f}초) | "
-                      f"입력 크기: {tuple(inputs.shape)} | 연산 시작", flush=True)
+                show_epoch_progress(
+                    epoch, phase, 0,
+                    status=f"로딩 {time.perf_counter() - phase_start:.2f}초 / 연산 중"
+                )
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -153,29 +193,7 @@ for epoch in range(num_epochs):
                     (phase_total_seconds[phase] + phase_elapsed)
                     / (phase_total_batches[phase] + batch_idx)
                 )
-                phase_remaining = (phase_batches[phase] - batch_idx) * seconds_per_batch[phase]
-                remaining = estimate_remaining(
-                    epoch, phase, batch_idx, phase_batches, seconds_per_batch
-                )
-                if remaining is None:
-                    eta_text = "전체 완료 예상: 첫 valid 배치 처리 후 계산"
-                else:
-                    finish_at = datetime.now().astimezone() + timedelta(seconds=remaining)
-                    eta_text = (
-                        f"전체 남은 시간 {format_duration(remaining)} | "
-                        f"학습 완료 예상 {finish_at:%Y-%m-%d %H:%M:%S %Z}"
-                    )
-                print(
-                    f"Epoch {epoch+1}/{num_epochs} [{phase}] "
-                    f"{batch_idx:,}/{phase_batches[phase]:,} "
-                    f"({100 * batch_idx / phase_batches[phase]:.1f}%) | "
-                    f"Loss {running_loss / processed_images:.4f} | "
-                    f"Acc {running_corrects / processed_images:.4f} | "
-                    f"평균 {seconds_per_batch[phase]:.3f}초/배치 | "
-                    f"경과 {format_duration(time.perf_counter() - training_start)} | "
-                    f"단계 남음 {format_duration(phase_remaining)} | {eta_text}",
-                    flush=True
-                )
+                show_epoch_progress(epoch, phase, batch_idx)
 
         phase_total_seconds[phase] += time.perf_counter() - phase_start
         phase_total_batches[phase] += phase_batches[phase]
@@ -183,12 +201,12 @@ for epoch in range(num_epochs):
         epoch_loss = running_loss / len(image_datasets[phase])
         epoch_acc = running_corrects / len(image_datasets[phase])
 
-        print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}", flush=True)
 
         if phase == 'train':
             train_acc_list.append(epoch_acc)
         else:
             val_acc_list.append(epoch_acc)
+            best_val_loss = min(best_val_loss, epoch_loss)
 
             # Model checkpoint 저장
             if epoch_acc > best_acc:
@@ -200,10 +218,13 @@ for epoch in range(num_epochs):
             # EarlyStopping
             else:
                 counter += 1
-                if counter >= patience:
-                    print(f"Early stopping at epoch {epoch+1}")
-                    break
 
+
+    show_epoch_progress(
+        epoch, 'val', phase_batches['val'],
+        status="EarlyStopping" if counter >= patience else "완료",
+        final=True
+    )
     if counter >= patience:
         break
 
