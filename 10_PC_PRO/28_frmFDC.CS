@@ -9,17 +9,17 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
-using System.Threading.Task;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
 namespace MotionKit {
-    public patial class frmFDC : Form {\
+    public partial class frmFDC : Form {
     
     TcpListener listener;
     TcpClient client;
     NetworkStream stream;
-    StramWriter writer;
+    StreamWriter writer;
 
     byte[] readBuf;
     List<FdcConfig> configlist;
@@ -33,15 +33,15 @@ namespace MotionKit {
 
         btnListen.Text = status;
         btnListen.ForeColor =
-            status = "Server Running" ? Color.Blue : Color.Red;
+            status == "Server Running" ? Color.Blue : Color.Red;
         ServerStatusChanged?.Invoke(status);
     }
 
-    static readonly Ilog log =
+    static readonly ILog log =
         LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
     
     public frmFDC(){
-        InitialkizeComponent();
+        InitializeComponent();
         
         readBuf = new byte[1024 * 5];
         configlist = new List<FdcConfig>();
@@ -71,7 +71,7 @@ namespace MotionKit {
 
         tbMessage.ScrollBars = ScrollBars.Both;
         tbMessage.WordWrap = false;
-        tbMessage.ScrollToCcret();
+        tbMessage.ScrollToCaret();
     }
 
     private async void btnListen_Click(object sender, EventArgs e) {
@@ -138,7 +138,6 @@ namespace MotionKit {
     public void StopServer() {
         bRunFlag = false;
         listener?.Stop();
-        listener?.Close();
     }
 
     private async Task HandleClient(TcpClient client) {
@@ -165,7 +164,7 @@ namespace MotionKit {
                 await Write(aliveMsg);
 
                 if (cbxAlive.Checked) tbMessage.AppendText(aliveMsg);
-                log.Info($"{aliveMsg}")
+                log.Info($"{aliveMsg}");
             }
         }
     }
@@ -237,7 +236,7 @@ namespace MotionKit {
         XElement msg = new XElement(Commons.Msg);
         XElement cmd = new XElement(Commons.Cmd, Commons.CmdAliveRep);
         XElement dataLayer = new XElement(Commons.DataLayer);
-        XElement time = new XElement(Commons.TimeStamp, DataTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        XElement time = new XElement(Commons.TimeStamp, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         
         XElement eqpid = new XElement(Commons.EqpID, configlist[0].EqpID);
         XElement modid = new XElement(Commons.ModID, configlist[0].ModID);
@@ -248,14 +247,14 @@ namespace MotionKit {
         dataLayer.Add(time);
         dataLayer.Add(eqpid);
         dataLayer.Add(modid);
-        dataLayer.Add(toolid);
+        dataLayer.Add(Toolid);
 
         Console.WriteLine(msg);
         return msg.ToString(SaveOptions.DisableFormatting);
     
     }
 
-    public MakeSVIDMsg() {
+    public string MakeSVIDMsg() {
 
         string msg = Commons.CmdReport + " ";
         msg += "HDR =(null, null, null)";
@@ -264,7 +263,7 @@ namespace MotionKit {
         msg += $"TRID = {configlist[0].TRID}";
         msg += $"LOTID = ({configlist[0].LotID})";
         msg += $"RECIPE = ({configlist[0].RecipeID})";
-        msg += $"SENSOR_VALUES = { ";
+        msg += "SENSOR_VALUES = { ";
 
         int cnt = 1;
         foreach (var item in svidlist) {
