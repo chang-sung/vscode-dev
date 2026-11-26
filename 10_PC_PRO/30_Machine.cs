@@ -102,8 +102,16 @@ namespace MotionKit
     public int ProductOkCount => System.Threading.Volatile.Read(ref productOkCount);
     public int ProductNgCount => System.Threading.Volatile.Read(ref productNgCount);
 
-    private DateTime productInputTime;
-    private string productInspectionResult;
+    private sealed class ProductRecord
+    {
+      public DateTime InputTime { get; set; }
+      public string InspectionResult { get; set; }
+    }
+
+    // 각 공정에서 처리 중인 제품의 투입시간과 검사 결과를 따로 보관한다.
+    private ProductRecord workProduct;
+    private ProductRecord inspectionProduct;
+    private ProductRecord unloadProduct;
     private int nextUnloadIndex;
 
     public event Action<DateTime, string, string> ProductUnloadPositionSelected;
@@ -287,6 +295,7 @@ namespace MotionKit
       }
       workStep = inspStep = unldStep = AutoStep.Ready;
       bWorkExist = bInspExist = bUnldExist = false;
+      workProduct = inspectionProduct = unloadProduct = null;
 
       cmd = EqpCmd.Init;
       return true;
@@ -387,8 +396,7 @@ namespace MotionKit
           {
 
             LoadCyl.On();
-            productInputTime = DateTime.Now;
-            productInspectionResult = null;
+            workProduct = new ProductRecord { InputTime = DateTime.Now };
 
             workStep = AutoStep.step10;
             Thread.Sleep(1000);
@@ -437,6 +445,8 @@ namespace MotionKit
           {
             MoveCyl.Off();
             bWorkExist = false;          //work 시퀀스 false = off
+            inspectionProduct = workProduct;
+            workProduct = null;
             bInspExist = true;          //Inspection 시퀀스 true
             Thread.Sleep(1000);
             workStep = AutoStep.step70;
@@ -511,7 +521,7 @@ namespace MotionKit
 
               Bitmap cropImage;
               bool detected = inspect(out cropImage);
-              productInspectionResult = detected ? "OK" : "NG";
+              inspectionProduct.InspectionResult = detected ? "OK" : "NG";
 
               // 제품 1개의 검사 결과를 누적 집계
               if (detected)
@@ -563,6 +573,7 @@ namespace MotionKit
             UnldCyl.Off();
 
             bInspExist = false;
+            inspectionProduct = null; // NG 제품 배출 완료
 
             inspStep = AutoStep.step120;
           }
@@ -592,6 +603,8 @@ namespace MotionKit
           {
             Convy.Off();
             Thread.Sleep(500);
+            unloadProduct = inspectionProduct;
+            inspectionProduct = null;
             bUnldExist = true;
             bInspExist = false;
             inspStep = AutoStep.step220;
@@ -694,8 +707,8 @@ namespace MotionKit
             unldStep = AutoStep.step50;
 
             ProductUnloadPositionSelected?.Invoke(
-                productInputTime,
-                productInspectionResult,
+                unloadProduct.InputTime,
+                unloadProduct.InspectionResult,
                 unloadPositionName);
           }
           break;
@@ -732,6 +745,7 @@ namespace MotionKit
             MultMoveAbs(TeachList.Pos_LD);
             Thread.Sleep(500);
             nextUnloadIndex++;
+            unloadProduct = null; // 적재 완료
 
             unldStep = AutoStep.step90;
           }
